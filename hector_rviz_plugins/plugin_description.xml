@@ -1,0 +1,7 @@
+<library path="libhector_rviz_plugins">
+  <class name="hector_rviz_plugins/MultiRobotState" type="hector_rviz_plugins::MultiRobotStateDisplay" base_class_type="rviz::Display">
+    <description>
+      Displays multiple robot states.
+    </description>
+  </class>
+</library>
