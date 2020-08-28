@@ -28,12 +28,7 @@ namespace hector_rviz_plugins
 class PrivateRobotStateDisplayHelper : public moveit_rviz_plugin::RobotStateDisplay
 {
 public:
-  PrivateRobotStateDisplayHelper()
-  {
-    robot_state_topic_property_->setValue( QString( "/rviz/multi_robot_state_display_junk_topic" ));
-    robot_state_topic_property_->setReadOnly( true );
-    robot_state_topic_property_->hide();
-  }
+  PrivateRobotStateDisplayHelper() = default;
 
   void forwardNewRobotState( const moveit_msgs::DisplayRobotState::ConstPtr &state )
   {
@@ -42,8 +37,18 @@ public:
 
   void setPositionAndOrientation( const Ogre::Vector3 &position, const Ogre::Quaternion &orientation )
   {
+    if ( scene_node_ == nullptr ) return;
     scene_node_->setPosition( position );
     scene_node_->setOrientation( orientation );
+  }
+
+protected:
+  void onInitialize() override
+  {
+    moveit_rviz_plugin::RobotStateDisplay::onInitialize();
+    robot_state_topic_property_->setValue( QString( "/rviz/multi_robot_state_display_junk_topic" ));
+    robot_state_topic_property_->setReadOnly( true );
+    robot_state_topic_property_->hide();
   }
 };
 
@@ -65,7 +70,8 @@ void MultiRobotStateDisplay::update( float wall_dt, float ros_dt )
   if ( default_frame.empty()) default_frame = fixed_frame_.toStdString();
   for ( auto &kvp : displays_ )
   {
-    kvp.second->update( wall_dt, ros_dt );
+    if ( kvp.second->isEnabled())
+      kvp.second->update( wall_dt, ros_dt );
     const geometry_msgs::PoseStamped &pose = poses_.find( kvp.first )->second;
     std_msgs::Header header = pose.header;
     if ( header.frame_id.empty()) header.frame_id = default_frame;
@@ -88,7 +94,9 @@ void MultiRobotStateDisplay::update( float wall_dt, float ros_dt )
         continue;
       }
       auto it = displays_.find( robot.id );
-      it->second->forwardNewRobotState( boost::make_shared<const moveit_msgs::DisplayRobotState>( robot.robot_state ));
+      if ( it->second->isEnabled())
+        it->second->forwardNewRobotState(
+          boost::make_shared<const moveit_msgs::DisplayRobotState>( robot.robot_state ));
     }
   }
 }
