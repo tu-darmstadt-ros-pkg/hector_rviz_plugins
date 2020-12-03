@@ -28,7 +28,14 @@ namespace hector_rviz_plugins
 class PrivateRobotStateDisplayHelper : public moveit_rviz_plugin::RobotStateDisplay
 {
 public:
-  PrivateRobotStateDisplayHelper() = default;
+  PrivateRobotStateDisplayHelper()
+  {
+    robot_state_topic_property_->blockSignals( true );
+    robot_state_topic_property_->setValue( QString( "/rviz/multi_robot_state_display_junk_topic" ));
+    robot_state_topic_property_->setReadOnly( true );
+    robot_state_topic_property_->hide();
+    robot_state_topic_property_->blockSignals( false );
+  }
 
   void forwardNewRobotState( const moveit_msgs::DisplayRobotState::ConstPtr &state )
   {
