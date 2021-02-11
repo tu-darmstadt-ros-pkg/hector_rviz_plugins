@@ -17,6 +17,7 @@
   <depend>hector_rviz_plugins_msgs</depend>
   <depend>moveit_ros_visualization</depend>
   <depend>rviz</depend>
+  <depend>std_msgs</depend>
 
   <export>
     <rviz plugin="${prefix}/plugin_description.xml"/>

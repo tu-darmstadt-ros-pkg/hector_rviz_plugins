@@ -1,0 +1,12 @@
+std_msgs/Header header
+# New position of the eye (camera) in the frame specified in the header
+# If no frame is specified, the fixed frame is used
+geometry_msgs/Point eye
+# New position of the focus point (the point we're looking at)
+geometry_msgs/Point focus
+# If true, do not animate eye and focus movement and just jump there
+bool disable_animation
+# If true, will stop tracking the tracked frame if there is one.
+bool stop_tracking
+---
+

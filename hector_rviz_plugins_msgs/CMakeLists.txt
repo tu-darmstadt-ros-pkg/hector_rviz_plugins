@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(hector_rviz_plugins_msgs)
+project(hector_rviz_plugins_msgs VERSION 1.0.0)
 
 find_package(catkin REQUIRED COMPONENTS geometry_msgs message_generation moveit_msgs)
 
@@ -8,14 +8,17 @@ add_message_files(
   FILES
     MultiRobotStateEntry.msg
     DisplayMultiRobotState.msg
+    ViewMode.msg
 )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+  FILES
+  MoveEye.srv
+  MoveEyeAndFocus.srv
+  SetViewMode.srv
+  TrackFrame.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
