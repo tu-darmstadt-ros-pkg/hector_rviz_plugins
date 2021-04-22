@@ -6,5 +6,7 @@ geometry_msgs/Point eye
 bool disable_animation
 # If true, will stop tracking the tracked frame if there is one.
 bool stop_tracking
+# If true, will switch to 3D mode otherwise stay in current mode
+bool switch_to_3d_mode
 ---
 

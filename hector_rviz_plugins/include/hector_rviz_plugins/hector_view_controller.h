@@ -81,10 +81,11 @@ public:
 
   void moveOnXYPlaneBy( float dx, float dy );
 
-  void moveEyeWithFocusTo( const Ogre::Vector3 &eye, bool stop_tracking = true, bool animate = true );
+  void moveEyeWithFocusTo( const Ogre::Vector3 &eye, bool stop_tracking = true, bool animate = true,
+                           bool switch_to_3d_mode = false );
 
   void moveEyeWithNewFocus( const Ogre::Vector3 &eye, const Ogre::Vector3 &focus, bool stop_tracking = true,
-                            bool animate = true );
+                            bool animate = true, bool switch_to_3d_mode = true );
 
   void cancelAnimation();
 

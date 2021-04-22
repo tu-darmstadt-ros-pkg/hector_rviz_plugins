@@ -192,7 +192,7 @@ void HectorViewController::onEnableServicesChanged()
             Ogre::Vector3 pos;
             Ogre::Quaternion _;
             context_->getFrameManager()->transform( req.header, pose, pos, _ );
-            moveEyeWithFocusTo( pos, req.stop_tracking, !req.disable_animation );
+            moveEyeWithFocusTo( pos, req.stop_tracking, !req.disable_animation, req.switch_to_3d_mode );
             return true;
           } ));
     }
@@ -312,10 +312,11 @@ void HectorViewController::moveOnXYPlaneBy( float dx, float dy )
   connectPositionProperties();
 }
 
-void HectorViewController::moveEyeWithFocusTo( const Ogre::Vector3 &eye, bool stop_tracking, bool animate )
+void HectorViewController::moveEyeWithFocusTo( const Ogre::Vector3 &eye, bool stop_tracking, bool animate,
+                                               bool switch_to_3d_mode )
 {
   moveEyeWithNewFocus( eye, focus_point_property_->getVector() + (eye - eye_point_property_->getVector()),
-                       stop_tracking, animate );
+                       stop_tracking, animate, switch_to_3d_mode );
 }
 
 void HectorViewController::zoom( float ddistance )
@@ -326,7 +327,7 @@ void HectorViewController::zoom( float ddistance )
 void HectorViewController::cancelAnimation() { in_animation_ = false; }
 
 void HectorViewController::moveEyeWithNewFocus( const Ogre::Vector3 &eye, const Ogre::Vector3 &focus,
-                                                bool stop_tracking, bool animate )
+                                                bool stop_tracking, bool animate, bool switch_to_3d_mode )
 {
   ROS_DEBUG_STREAM_NAMED( "HectorViewController", "Moving eye to (" << eye << ") and focus to (" << focus << ")" );
   cancelAnimation();
@@ -334,7 +335,7 @@ void HectorViewController::moveEyeWithNewFocus( const Ogre::Vector3 &eye, const 
   {
     stopTracking();
   }
-  if ( !in_mode_transition_ )
+  if ( !in_mode_transition_ && switch_to_3d_mode )
   {
     setMode( view_modes::Mode3D );
   }
