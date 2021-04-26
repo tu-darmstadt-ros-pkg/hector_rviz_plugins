@@ -9,4 +9,11 @@
       Displays multiple robot states.
     </description>
   </class>
+  <class name="hector_rviz_plugins/PointCloudFilter" type="hector_rviz_plugins::PointCloudFilterDisplay" base_class_type="rviz::Display">
+    <description>
+      Displays a pointcloud but filters all points above a specified treshold around an axis.
+    </description>
+    <message_type>sensor_msgs/PointCloud2</message_type>
+  </class>
+</library>
 </library>
