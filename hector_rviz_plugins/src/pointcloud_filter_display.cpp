@@ -7,6 +7,13 @@ PointCloudFilterDisplay::PointCloudFilterDisplay() : point_cloud_common_(new rvi
 {
     point_cloud_common_->decay_time_property_->setMax(100);
 
+    selected_frame = "world";
+    filtering = false;
+
+    filter_property_ = new BoolProperty("Enable filtering", filtering,
+                             "Whether to enable filtering or not",
+                             this, SLOT(enableFiltering()), this);
+
     axis_property_ = new rviz::EnumProperty( "Filtered Axis", "z",
                                                "Axis around which the points are filtered",
                                                this, SLOT( updateParameters()));
@@ -24,11 +31,14 @@ PointCloudFilterDisplay::PointCloudFilterDisplay() : point_cloud_common_(new rvi
                                                    "Maximum value for points to be displayed.",
                                                    this, SLOT( updateParameters()));
 
-    frame_property_ = new rviz::TfFrameProperty("Frame", "world",
+    frame_property_ = new rviz::TfFrameProperty("Frame", selected_frame.c_str(),
                                            "The frame to which the points are displayed relatively.",
                                            this, frame_manager_, true, SLOT( updateParameters()), this);
 
-    selected_frame = "world";
+    filter_property_->addChild(axis_property_);
+    filter_property_->addChild(frame_property_);
+    filter_property_->addChild(min_value_property_);
+    filter_property_->addChild(max_value_property_);
 
     update_nh_.setCallbackQueue(point_cloud_common_->getCallbackQueue());
 
@@ -81,22 +91,27 @@ void PointCloudFilterDisplay::processMessage(const sensor_msgs::PointCloud2Const
     if(!known_cloud)
         cloud_q.push_back(cloud);
 
+    if(filtering) {
 
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr pcl_cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr pcl_cloud_filtered (new pcl::PointCloud<pcl::PointXYZRGB>);
-    sensor_msgs::PointCloud2Ptr cloud_filtered(new sensor_msgs::PointCloud2);
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr pcl_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr pcl_cloud_filtered(new pcl::PointCloud<pcl::PointXYZRGB>);
+        sensor_msgs::PointCloud2Ptr cloud_filtered(new sensor_msgs::PointCloud2);
 
-    pcl::fromROSMsg(*cloud, *pcl_cloud);
+        pcl::fromROSMsg(*cloud, *pcl_cloud);
 
-    pcl::PassThrough<pcl::PointXYZRGB> pass;
-    pass.setInputCloud(pcl_cloud);
-    pass.setFilterFieldName (axis_property_->getStdString());
-    pass.setFilterLimits (min_value_property_->getFloat(), max_value_property_->getFloat());
+        pcl::PassThrough<pcl::PointXYZRGB> pass;
+        pass.setInputCloud(pcl_cloud);
+        pass.setFilterFieldName(axis_property_->getStdString());
+        pass.setFilterLimits(min_value_property_->getFloat(), max_value_property_->getFloat());
 
-    pass.filter(*pcl_cloud_filtered );
+        pass.filter(*pcl_cloud_filtered);
 
-    pcl::toROSMsg(*pcl_cloud_filtered, *cloud_filtered);
-    point_cloud_common_->addMessage(cloud_filtered);
+        pcl::toROSMsg(*pcl_cloud_filtered, *cloud_filtered);
+        point_cloud_common_->addMessage(cloud_filtered);
+    }
+    else{
+        point_cloud_common_->addMessage(cloud);
+    }
 }
 
 void PointCloudFilterDisplay::update(float wall_dt, float ros_dt)
@@ -129,6 +144,15 @@ void PointCloudFilterDisplay::updateParameters(){
         processMessage(cloud_msg);
     }
 }
+
+void PointCloudFilterDisplay::enableFiltering(){
+        filtering = filter_property_->getBool();
+
+        if(filtering)
+            filter_property_->expand();
+
+        updateParameters();
+    }
 
 } // namespace hector_rviz_plugins
 

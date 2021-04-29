@@ -5,6 +5,7 @@
 
 #include <rviz/display.h>
 #include <rviz/message_filter_display.h>
+#include <rviz/properties/bool_property.h>
 #include <rviz/properties/float_property.h>
 #include <rviz/properties/enum_property.h>
 #include <rviz/properties/string_property.h>
@@ -47,7 +48,9 @@ protected:
   rviz::FrameManager *frame_manager_ = new rviz::FrameManager();
 
   std::string selected_frame;
+  bool filtering;
 
+  rviz::BoolProperty* filter_property_;
   rviz::EnumProperty* axis_property_;
   rviz::FloatProperty* min_value_property_;
   rviz::FloatProperty* max_value_property_;
@@ -67,6 +70,7 @@ protected:
 
 private Q_SLOTS:
     void updateParameters();
+    void enableFiltering();
 };
 
 } // namespace hector_rviz_plugins
