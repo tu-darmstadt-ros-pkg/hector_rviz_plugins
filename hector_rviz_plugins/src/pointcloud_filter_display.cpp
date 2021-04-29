@@ -5,40 +5,38 @@ namespace hector_rviz_plugins
 {
 PointCloudFilterDisplay::PointCloudFilterDisplay() : point_cloud_common_(new rviz::PointCloudCommon(this)), cloud_q()
 {
+    pcl::console::setVerbosityLevel(pcl::console::L_ERROR);
     point_cloud_common_->decay_time_property_->setMax(100);
 
     selected_frame = "world";
     filtering = false;
+    selected_axis = "z";
 
     filter_property_ = new BoolProperty("Enable filtering", filtering,
                              "Whether to enable filtering or not",
                              this, SLOT(enableFiltering()), this);
 
-    axis_property_ = new rviz::EnumProperty( "Filtered Axis", "z",
+    axis_property_ = new rviz::EnumProperty( "Filtered Axis", "Z",
                                                "Axis around which the points are filtered",
-                                               this, SLOT( updateParameters()));
+                                               filter_property_, SLOT( updateParameters()), this);
 
-    axis_property_->addOption("x", X);
-    axis_property_->addOption("y", Y);
-    axis_property_->addOption("z", Z);
+    axis_property_->addOption("X", X);
+    axis_property_->addOption("Y", Y);
+    axis_property_->addOption("Z", Z);
 
 
     min_value_property_ = new rviz::FloatProperty( "Min Value", -2.0,
                                                   "Minimum value for points to be displayed.",
-                                                  this, SLOT( updateParameters()));
+                                                   filter_property_, SLOT( updateParameters()), this);
 
     max_value_property_ = new rviz::FloatProperty( "Max Value", 2.0,
                                                    "Maximum value for points to be displayed.",
-                                                   this, SLOT( updateParameters()));
+                                                   filter_property_, SLOT( updateParameters()), this);
 
     frame_property_ = new rviz::TfFrameProperty("Frame", selected_frame.c_str(),
                                            "The frame to which the points are displayed relatively.",
-                                           this, frame_manager_, true, SLOT( updateParameters()), this);
+                                                filter_property_, frame_manager_, true, SLOT( updateParameters()), this);
 
-    filter_property_->addChild(axis_property_);
-    filter_property_->addChild(frame_property_);
-    filter_property_->addChild(min_value_property_);
-    filter_property_->addChild(max_value_property_);
 
     update_nh_.setCallbackQueue(point_cloud_common_->getCallbackQueue());
 
@@ -101,7 +99,7 @@ void PointCloudFilterDisplay::processMessage(const sensor_msgs::PointCloud2Const
 
         pcl::PassThrough<pcl::PointXYZRGB> pass;
         pass.setInputCloud(pcl_cloud);
-        pass.setFilterFieldName(axis_property_->getStdString());
+        pass.setFilterFieldName(selected_axis);
         pass.setFilterLimits(min_value_property_->getFloat(), max_value_property_->getFloat());
 
         pass.filter(*pcl_cloud_filtered);
@@ -133,6 +131,9 @@ void PointCloudFilterDisplay::updateParameters(){
         selected_frame = context_->getFixedFrame().toStdString();
     else
         selected_frame = frame_property_->getFrameStd();
+
+    selected_axis = axis_property_->getStdString().c_str();
+    boost::algorithm::to_lower(selected_axis);
 
     //Process each saved cloud again with the changed parameters and pass to point_cloud_common
     auto it = cloud_q.begin();

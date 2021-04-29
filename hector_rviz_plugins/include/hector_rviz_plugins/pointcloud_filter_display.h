@@ -22,6 +22,7 @@
 
 #include <tf/transform_listener.h>
 #include <deque>
+#include <boost/algorithm/string.hpp>
 
 
 namespace hector_rviz_plugins
@@ -48,6 +49,7 @@ protected:
   rviz::FrameManager *frame_manager_ = new rviz::FrameManager();
 
   std::string selected_frame;
+  std::string selected_axis;
   bool filtering;
 
   rviz::BoolProperty* filter_property_;
