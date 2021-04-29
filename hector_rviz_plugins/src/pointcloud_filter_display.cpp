@@ -7,8 +7,8 @@ PointCloudFilterDisplay::PointCloudFilterDisplay() : point_cloud_common_(new rvi
 {
     point_cloud_common_->decay_time_property_->setMax(100);
 
-    axis_property_ = new rviz::EnumProperty( "Axis", "z",
-                                               "Axis around the points are filtered",
+    axis_property_ = new rviz::EnumProperty( "Filtered Axis", "z",
+                                               "Axis around which the points are filtered",
                                                this, SLOT( updateParameters()));
 
     axis_property_->addOption("x", X);
@@ -24,9 +24,11 @@ PointCloudFilterDisplay::PointCloudFilterDisplay() : point_cloud_common_(new rvi
                                                    "Maximum value for points to be displayed.",
                                                    this, SLOT( updateParameters()));
 
-    frame_property_ = new rviz::StringProperty( "Frame", "world",
-                                               "The frame to which the points are displayed relatively.",
-                                               this, SLOT( updateParameters()));
+    frame_property_ = new rviz::TfFrameProperty("Frame", "world",
+                                           "The frame to which the points are displayed relatively.",
+                                           this, frame_manager_, true, SLOT( updateParameters()), this);
+
+    selected_frame = "world";
 
     update_nh_.setCallbackQueue(point_cloud_common_->getCallbackQueue());
 
@@ -73,13 +75,8 @@ void PointCloudFilterDisplay::processMessage(const sensor_msgs::PointCloud2Const
     //Transform cloud into the selected frame so x, y, z values can be filtered easily
     sensor_msgs::PointCloud2Ptr cloud(new sensor_msgs::PointCloud2);
 
-    if(tf_listener->waitForTransform(frame_property_->getStdString(), msg->header.frame_id, msg->header.stamp, ros::Duration(0.01))){
-        pcl_ros::transformPointCloud(frame_property_->getStdString(), *msg, *cloud, *tf_listener);
-    }
-    else{
-        ROS_DEBUG("Given frame does not exist!");
-        pcl_ros::transformPointCloud("world", *msg, *cloud, *tf_listener);
-    }
+    tf_listener->waitForTransform(selected_frame, msg->header.frame_id, msg->header.stamp, ros::Duration(0.1));
+    pcl_ros::transformPointCloud(selected_frame, *msg, *cloud, *tf_listener);
 
     if(!known_cloud)
         cloud_q.push_back(cloud);
@@ -116,6 +113,11 @@ void PointCloudFilterDisplay::reset()
 
 void PointCloudFilterDisplay::updateParameters(){
     point_cloud_common_->reset();
+
+    if(frame_property_->getStdString() == "<Fixed Frame>")
+        selected_frame = context_->getFixedFrame().toStdString();
+    else
+        selected_frame = frame_property_->getFrameStd();
 
     //Process each saved cloud again with the changed parameters and pass to point_cloud_common
     auto it = cloud_q.begin();

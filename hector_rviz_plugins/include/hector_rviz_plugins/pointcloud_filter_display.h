@@ -8,6 +8,8 @@
 #include <rviz/properties/float_property.h>
 #include <rviz/properties/enum_property.h>
 #include <rviz/properties/string_property.h>
+#include <rviz/properties/tf_frame_property.h>
+#include <rviz/frame_manager.h>
 #include <rviz/default_plugin/point_cloud_common.h>
 
 #include <pcl_ros/transforms.h>
@@ -42,11 +44,14 @@ protected:
   void processMessage(const sensor_msgs::PointCloud2ConstPtr& cloud) override;
 
   tf::TransformListener *tf_listener = new tf::TransformListener(ros::Duration(100));
-  
+  rviz::FrameManager *frame_manager_ = new rviz::FrameManager();
+
+  std::string selected_frame;
+
   rviz::EnumProperty* axis_property_;
   rviz::FloatProperty* min_value_property_;
   rviz::FloatProperty* max_value_property_;
-  rviz::StringProperty* frame_property_;
+  rviz::TfFrameProperty* frame_property_;
 
   typedef std::deque<sensor_msgs::PointCloud2ConstPtr> D_CloudInfo;
   D_CloudInfo cloud_q;
