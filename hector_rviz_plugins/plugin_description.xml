@@ -16,4 +16,3 @@
     <message_type>sensor_msgs/PointCloud2</message_type>
   </class>
 </library>
-</library>
