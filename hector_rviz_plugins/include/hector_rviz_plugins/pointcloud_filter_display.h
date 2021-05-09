@@ -45,9 +45,6 @@ protected:
 
   void processMessage(const sensor_msgs::PointCloud2ConstPtr& cloud) override;
 
-  tf::TransformListener *tf_listener = new tf::TransformListener(ros::Duration(100));
-  rviz::FrameManager *frame_manager_ = new rviz::FrameManager();
-
   std::string selected_frame;
   std::string selected_axis;
   bool filtering;

@@ -8,7 +8,7 @@ PointCloudFilterDisplay::PointCloudFilterDisplay() : point_cloud_common_(new rvi
     pcl::console::setVerbosityLevel(pcl::console::L_ERROR);
     point_cloud_common_->decay_time_property_->setMax(100);
 
-    selected_frame = "world";
+    selected_frame = "base_link";
     filtering = false;
     selected_axis = "z";
 
@@ -35,8 +35,7 @@ PointCloudFilterDisplay::PointCloudFilterDisplay() : point_cloud_common_(new rvi
 
     frame_property_ = new rviz::TfFrameProperty("Frame", selected_frame.c_str(),
                                            "The frame to which the points are displayed relatively.",
-                                                filter_property_, frame_manager_, true, SLOT( updateParameters()), this);
-
+                                                filter_property_, nullptr, true, SLOT( updateParameters()), this);
 
     update_nh_.setCallbackQueue(point_cloud_common_->getCallbackQueue());
 
@@ -47,6 +46,7 @@ PointCloudFilterDisplay::PointCloudFilterDisplay() : point_cloud_common_(new rvi
 void PointCloudFilterDisplay::onInitialize()
 {
     MFDClass::onInitialize();
+    frame_property_->setFrameManager(context_->getFrameManager());
     point_cloud_common_->initialize(context_, scene_node_);
 
 }
@@ -83,8 +83,12 @@ void PointCloudFilterDisplay::processMessage(const sensor_msgs::PointCloud2Const
     //Transform cloud into the selected frame so x, y, z values can be filtered easily
     sensor_msgs::PointCloud2Ptr cloud(new sensor_msgs::PointCloud2);
 
-    tf_listener->waitForTransform(selected_frame, msg->header.frame_id, msg->header.stamp, ros::Duration(0.1));
-    pcl_ros::transformPointCloud(selected_frame, *msg, *cloud, *tf_listener);
+    if(!context_->getFrameManager()->getTF2BufferPtr()->canTransform(selected_frame, msg->header.frame_id, msg->header.stamp, ros::Duration(0.0))){
+        ROS_DEBUG("Selected frame %s is not available!", selected_frame.c_str());
+        return;
+    }
+
+    pcl_ros::transformPointCloud(selected_frame, *msg, *cloud, *context_->getFrameManager()->getTF2BufferPtr());
 
     if(!known_cloud)
         cloud_q.push_back(cloud);
@@ -121,6 +125,7 @@ void PointCloudFilterDisplay::reset()
 {
     MFDClass::reset();
     point_cloud_common_->reset();
+    cloud_q.clear();
 
 }
 
@@ -132,7 +137,7 @@ void PointCloudFilterDisplay::updateParameters(){
     else
         selected_frame = frame_property_->getFrameStd();
 
-    selected_axis = axis_property_->getStdString().c_str();
+    selected_axis = axis_property_->getStdString();
     boost::algorithm::to_lower(selected_axis);
 
     //Process each saved cloud again with the changed parameters and pass to point_cloud_common
