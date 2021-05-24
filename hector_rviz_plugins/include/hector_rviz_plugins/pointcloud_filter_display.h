@@ -1,29 +1,22 @@
 #ifndef HECTOR_RVIZ_PLUGINS_POINTCLOUD_FILTER_DISPLAY_H
 #define HECTOR_RVIZ_PLUGINS_POINTCLOUD_FILTER_DISPLAY_H
 
-#include <sensor_msgs/PointCloud2.h>
-
-#include <rviz/display.h>
 #include <rviz/message_filter_display.h>
-#include <rviz/properties/bool_property.h>
-#include <rviz/properties/float_property.h>
-#include <rviz/properties/enum_property.h>
-#include <rviz/properties/string_property.h>
-#include <rviz/properties/tf_frame_property.h>
-#include <rviz/frame_manager.h>
+
 #include <rviz/default_plugin/point_cloud_common.h>
-
-#include <pcl_ros/transforms.h>
-#include <pcl_conversions/pcl_conversions.h>
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include <pcl_conversions/pcl_conversions.h>
-#include <pcl/filters/passthrough.h>
-
-#include <tf/transform_listener.h>
 #include <deque>
-#include <boost/algorithm/string.hpp>
 
+namespace rviz{
+    class BoolProperty;
+    class FloatProperty;
+    class EnumProperty;
+    class TfFrameProperty;
+}
+
+namespace pcl{
+    template <class T> class PassThrough;
+    template <class T> class PointCloud;
+}
 
 namespace hector_rviz_plugins
 {
@@ -44,6 +37,9 @@ protected:
   void onInitialize() override;
 
   void processMessage(const sensor_msgs::PointCloud2ConstPtr& cloud) override;
+
+  template <class T>
+  void filterCloud(pcl::PassThrough<T> filter, typename pcl::PointCloud<T>::Ptr cloud);
 
   std::string selected_frame;
   std::string selected_axis;
