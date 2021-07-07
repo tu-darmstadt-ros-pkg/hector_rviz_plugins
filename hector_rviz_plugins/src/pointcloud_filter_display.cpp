@@ -51,7 +51,6 @@ PointCloudFilterDisplay::PointCloudFilterDisplay() : point_cloud_common_(new rvi
                                            "The frame to which the points are displayed relatively.",
                                                 filter_property_, nullptr, true, SLOT( updateParameters()), this);
 
-    update_nh_.setCallbackQueue(point_cloud_common_->getCallbackQueue());
 
 }
 
@@ -60,6 +59,7 @@ PointCloudFilterDisplay::PointCloudFilterDisplay() : point_cloud_common_(new rvi
 void PointCloudFilterDisplay::onInitialize()
 {
     MFDClass::onInitialize();
+    update_nh_.setCallbackQueue(context_->getThreadedQueue());
 
     selected_frame = context_->getFixedFrame().toStdString();
     frame_property_->setFrameManager(context_->getFrameManager());
