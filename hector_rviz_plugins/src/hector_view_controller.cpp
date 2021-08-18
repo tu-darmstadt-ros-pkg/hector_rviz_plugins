@@ -108,7 +108,6 @@ void HectorViewController::mimic( rviz::ViewController *source_view )
   setMode( source_view->getClassId() == "rviz/TopDownOrtho" ? view_modes::Mode2D : view_modes::Mode3D, false );
 
   setPropertiesFromCamera( source_camera );
-  updateCamera();
 }
 
 void HectorViewController::onInitialize()
@@ -157,7 +156,6 @@ void HectorViewController::reset()
   eye_point_property_->setVector( Ogre::Vector3( 4, 0, 3 ));
   up_vector_property_->setVector( Ogre::Vector3::UNIT_Z );
   updateDistance();
-  updateCamera();
   connectPositionProperties();
 }
 
@@ -665,8 +663,7 @@ void HectorViewController::handleMouseEvent3D( rviz::ViewportMouseEvent &evt )
 
 void HectorViewController::update( float dt, float )
 {
-  if ( !updateCameraProperties( dt )) return;
-
+  updateCameraProperties( dt );
   updateCamera();
 }
 
