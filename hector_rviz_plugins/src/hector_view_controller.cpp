@@ -17,13 +17,14 @@
 
 #include "hector_rviz_plugins/hector_view_controller.h"
 
+#include "./view_controller_detail/camera_controller.h"
+
 #include <rviz/frame_position_tracking_view_controller.h>
 #include <rviz/ogre_helpers/orthographic.h>
 #include <rviz/properties/bool_property.h>
 #include <rviz/properties/float_property.h>
 #include <rviz/properties/tf_frame_property.h>
 #include <rviz/properties/vector_property.h>
-#include <rviz/display_context.h>
 #include <rviz/frame_manager.h>
 #include <rviz/geometry.h>
 #include <rviz/render_panel.h>
@@ -62,7 +63,7 @@ HectorViewController::HectorViewController() : update_nh_( "~" )
 
   animation_duration_property_ = new rviz::FloatProperty( "Animation Duration", 1,
                                                           "The time the view controller takes to animate to the goal position in seconds.",
-                                                          this );
+                                                          this, SLOT( onAnimationDurationChanged()), this );
   mode2d_property_ = new rviz::BoolProperty( "2D Mode", false,
                                              "If activated the view switches to a top down 2D mode similar to the TopDownOrtho viewcontroller. (Ctrl+D)",
                                              this, SLOT( onMode2DChanged()), this );
@@ -107,17 +108,20 @@ void HectorViewController::mimic( rviz::ViewController *source_view )
   setMode( source_view->getClassId() == "rviz/TopDownOrtho" ? view_modes::Mode2D : view_modes::Mode3D, false );
 
   setPropertiesFromCamera( source_camera );
+  updateCamera();
 }
 
 void HectorViewController::onInitialize()
 {
+  camera_animator_ = std::make_unique<CameraAnimator>( context_ );
+  camera_animator_->setAnimationDuration( animation_duration_property_->getFloat());
   tracked_frame_property_ = new rviz::TfFrameProperty( "Tracked Frame", "",
                                                        "The tracked frame. The view controller will follow this frame as it changes. Leave empty to disable tracking.",
                                                        this, context_->getFrameManager(), false,
                                                        SLOT( onTrackedFrameChanged()), this );
-  tracked_frame_p_gain_property_ = new rviz::FloatProperty( "Tracked Frame P-Gain", 3,
+  tracked_frame_p_gain_property_ = new rviz::FloatProperty( "Tracked Frame P-Gain", camera_animator_->pGain(),
                                                             "The P-Gain used to follow the tracked frame. This parameter is scaled by delta t.",
-                                                            this );
+                                                            this, SLOT( onPGainChanged()), this );
 
   camera_->detachFromParent();
   camera_->setProjectionType( Ogre::PT_PERSPECTIVE );
@@ -153,6 +157,7 @@ void HectorViewController::reset()
   eye_point_property_->setVector( Ogre::Vector3( 4, 0, 3 ));
   up_vector_property_->setVector( Ogre::Vector3::UNIT_Z );
   updateDistance();
+  updateCamera();
   connectPositionProperties();
 }
 
@@ -324,7 +329,7 @@ void HectorViewController::zoom( float ddistance )
   distance_property_->add( -ddistance );
 }
 
-void HectorViewController::cancelAnimation() { in_animation_ = false; }
+void HectorViewController::cancelAnimation() { camera_animator_->stop(); }
 
 void HectorViewController::moveEyeWithNewFocus( const Ogre::Vector3 &eye, const Ogre::Vector3 &focus,
                                                 bool stop_tracking, bool animate, bool switch_to_3d_mode )
@@ -341,19 +346,7 @@ void HectorViewController::moveEyeWithNewFocus( const Ogre::Vector3 &eye, const 
   }
   if ( animate )
   {
-    // Reset tracked frame differences
-    tracked_frame_remaining_position_difference_ = Ogre::Vector3::ZERO;
-    tracked_frame_remaining_orientation_difference_ = Ogre::Quaternion::IDENTITY;
-
-    animation_eye_start_ = eye_point_property_->getVector();
-    animation_eye_goal_ = eye;
-
-    animation_focus_start_ = focus_point_property_->getVector();
-    animation_focus_goal_ = focus;
-
-    animation_start_ = ros::WallTime::now();
-
-    in_animation_ = true;
+    camera_animator_->animate( eye_point_property_->getVector(), eye, focus_point_property_->getVector(), focus );
   }
   else
   {
@@ -394,28 +387,20 @@ void HectorViewController::setMode( ViewMode value, bool animate_transition )
 
 void HectorViewController::trackFrame( const std::string &name )
 {
-  if ( tracked_frame_ == name ) return;
-  tracked_frame_ = name;
-  is_frame_tracked_ = !name.empty();
-  if ( is_frame_tracked_ )
-  {
-    context_->getFrameManager()->getTransform( name, ros::Time(), tracked_frame_last_position_,
-                                               tracked_frame_last_orientation_ );
-    tracked_frame_remaining_position_difference_ = Ogre::Vector3::ZERO;
-    tracked_frame_remaining_orientation_difference_ = Ogre::Quaternion::IDENTITY;
-  }
+  if ( camera_animator_->trackedFrame() == name ) return;
+  camera_animator_->trackFrame( name );
   tracked_frame_property_->setStdString( name );
   publishTrackedFrame();
-  emit trackingChanged( is_frame_tracked_, tracked_frame_ );
+  emit trackingChanged( camera_animator_->isFrameTracked(), camera_animator_->trackedFrame());
 }
 
 void HectorViewController::stopTracking()
 {
-  if ( !is_frame_tracked_ ) return;
-  is_frame_tracked_ = false;
+  if ( !camera_animator_->isFrameTracked()) return;
+  camera_animator_->stopTracking();
   tracked_frame_property_->setString( "" );
   publishTrackedFrame();
-  emit trackingChanged( is_frame_tracked_, tracked_frame_ );
+  emit trackingChanged( camera_animator_->isFrameTracked(), camera_animator_->trackedFrame());
 }
 
 void HectorViewController::onMode2DChanged()
@@ -423,6 +408,11 @@ void HectorViewController::onMode2DChanged()
   setMode( mode2d_property_->getBool() ? view_modes::Mode2D : view_modes::Mode3D );
   angle_property_->setHidden( !mode2d_property_->getBool());
   eye_point_property_->setHidden( mode2d_property_->getBool());
+}
+
+void HectorViewController::onAnimationDurationChanged()
+{
+  camera_animator_->setAnimationDuration( animation_duration_property_->getFloat());
 }
 
 void HectorViewController::onEyePropertyChanged()
@@ -444,6 +434,11 @@ void HectorViewController::onDistancePropertyChanged()
 }
 
 void HectorViewController::onTrackedFrameChanged() { trackFrame( tracked_frame_property_->getFrameStd()); }
+
+void HectorViewController::onPGainChanged()
+{
+  camera_animator_->setPGain( tracked_frame_p_gain_property_->getFloat());
+}
 
 void HectorViewController::onKeyboardNavigationChanged()
 {
@@ -471,7 +466,7 @@ void HectorViewController::publishTrackedFrame()
 {
   if ( !tracked_frame_pub_ ) return;
   std_msgs::String tracked_frame_msg;
-  tracked_frame_msg.data = is_frame_tracked_ ? tracked_frame_ : "";
+  tracked_frame_msg.data = camera_animator_->isFrameTracked() ? camera_animator_->trackedFrame() : "";
   tracked_frame_pub_.publish( tracked_frame_msg );
 }
 
@@ -668,40 +663,50 @@ void HectorViewController::handleMouseEvent3D( rviz::ViewportMouseEvent &evt )
   context_->queueRender();
 }
 
-namespace
-{
-bool getTransformOrLogError( rviz::FrameManager *frame_manager, const std::string &frame, const ros::Time &time,
-                             Ogre::Vector3 &pos_out, Ogre::Quaternion &q_out )
-{
-  if ( !frame_manager->getTransform( frame, ros::Time(), pos_out,
-                                     q_out ))
-  {
-    std::string error;
-    if ( !frame_manager->transformHasProblems( frame, ros::Time(), error ))
-    {
-      error = "Unknown";
-    }
-    ROS_WARN_NAMED( "HectorViewController", "Could not get transform to locked frame! Reason: %s", error.c_str());
-    return false;
-  }
-  return true;
-}
-}
-
 void HectorViewController::update( float dt, float )
 {
-  updateCameraProperties( dt );
+  if ( !updateCameraProperties( dt )) return;
 
-  if ( in_animation_ )
+  updateCamera();
+}
+
+bool HectorViewController::updateCameraProperties( float dt )
+{
+  Ogre::Vector3 focus = focus_point_property_->getVector(), eye = eye_point_property_->getVector();
+
+  bool camera_position_changed = camera_animator_->updateCamera( eye, focus, dt );
+
+  if ( mode() == view_modes::Mode2D && !camera_position_changed )
   {
-    updateCamera();
-    return;
+    if ( in_mode_transition_ )
+    {
+      camera_->setProjectionType( Ogre::PT_ORTHOGRAPHIC );
+      camera_->setFixedYawAxis( false );
+      camera_->setOrientation( Ogre::Quaternion( Ogre::Radian( angle_property_->getFloat()), Ogre::Vector3::UNIT_Z ));
+      in_mode_transition_ = false;
+    }
+    focus = focus_point_property_->getVector();
+    camera_->setPosition( focus.x, focus.y, DISTANCE_SCALE_FACTOR );
+    auto width = static_cast<float>(camera_->getViewport()->getActualWidth());
+    auto height = static_cast<float>(camera_->getViewport()->getActualHeight());
+    float scale = DISTANCE_SCALE_FACTOR / distance_property_->getFloat();
+
+    Ogre::Matrix4 proj;
+    rviz::buildScaledOrthoMatrix( proj, -width / scale / 2, width / scale / 2, -height / scale / 2, height / scale / 2,
+                                  camera_->getNearClipDistance(), camera_->getFarClipDistance());
+    camera_->setCustomProjectionMatrix( true, proj );
   }
-  if ( key_x_direction_ == 0 && key_y_direction_ == 0 )
+
+  if ( camera_position_changed )
   {
-    updateCamera();
-    return;
+    disconnectPositionProperties();
+    eye_point_property_->setVector( eye );
+    focus_point_property_->setVector( focus );
+    updateDistance();
+    connectPositionProperties();
   }
+
+  if ( key_x_direction_ == 0 && key_y_direction_ == 0 ) return camera_position_changed;
 
   auto x = static_cast<float>(key_x_direction_);
   auto y = static_cast<float>(key_y_direction_);
@@ -726,105 +731,7 @@ void HectorViewController::update( float dt, float )
   x_direction.z = 0;
   x_direction.normalise();
   moveOnXYPlaneBy( -x * x_direction.x - y * y_direction.x, -x * x_direction.y - y * y_direction.y );
-  updateCamera();
-}
-
-void HectorViewController::updateCameraProperties( float dt )
-{
-  bool camera_position_changed = false;
-  Ogre::Vector3 focus = focus_point_property_->getVector(), eye = eye_point_property_->getVector();
-  if ( in_animation_ )
-  {
-    ros::WallDuration elapsed = ros::WallTime::now() - animation_start_;
-    float completed_percent = (float) elapsed.toSec() / animation_duration_property_->getFloat();
-    if ( completed_percent < 1 )
-    {
-      // The completed percent is adjusted to make a smooth transition
-      // using this sigmoid function: https://www.wolframalpha.com/input/?i=y%3D(1%2F(1%2Be%5E(-12(x-0.5)))),+from+0+to+1
-      completed_percent = 1.f / (1 + expf( -12.f * (completed_percent - 0.5f)));
-      Ogre::Vector3 animation_focus_goal_offset = animation_focus_goal_ - animation_focus_start_;
-      Ogre::Vector3 animation_eye_goal_offset = animation_eye_goal_ - animation_eye_start_;
-      focus = animation_focus_start_ + completed_percent * animation_focus_goal_offset;
-      eye = animation_eye_start_ + completed_percent * animation_eye_goal_offset;
-    }
-    else if ( completed_percent >= 1 )
-    {
-      focus = animation_focus_goal_;
-      eye = animation_eye_goal_;
-      in_animation_ = false;
-    }
-    camera_position_changed = true;
-  }
-
-  if ( mode() == view_modes::Mode2D && !in_animation_ )
-  {
-    if ( in_mode_transition_ )
-    {
-      camera_->setProjectionType( Ogre::PT_ORTHOGRAPHIC );
-      camera_->setFixedYawAxis( false );
-      camera_->setOrientation( Ogre::Quaternion( Ogre::Radian( angle_property_->getFloat()), Ogre::Vector3::UNIT_Z ));
-      in_mode_transition_ = false;
-    }
-    focus = focus_point_property_->getVector();
-    camera_->setPosition( focus.x, focus.y, DISTANCE_SCALE_FACTOR );
-    auto width = static_cast<float>(camera_->getViewport()->getActualWidth());
-    auto height = static_cast<float>(camera_->getViewport()->getActualHeight());
-    float scale = DISTANCE_SCALE_FACTOR / distance_property_->getFloat();
-
-    Ogre::Matrix4 proj;
-    rviz::buildScaledOrthoMatrix( proj, -width / scale / 2, width / scale / 2, -height / scale / 2, height / scale / 2,
-                                  camera_->getNearClipDistance(), camera_->getFarClipDistance());
-    camera_->setCustomProjectionMatrix( true, proj );
-  }
-
-  if ( is_frame_tracked_ )
-  {
-    Ogre::Vector3 current_position;
-    Ogre::Quaternion current_orientation;
-    if ( getTransformOrLogError( context_->getFrameManager(), tracked_frame_, ros::Time(),
-                                 current_position, current_orientation ))
-    {
-      tracked_frame_remaining_position_difference_ += current_position - tracked_frame_last_position_;
-      float weight = std::min<float>( tracked_frame_p_gain_property_->getFloat() * dt, 1 );
-      Ogre::Vector3 position_diff = tracked_frame_remaining_position_difference_ * weight;
-      tracked_frame_remaining_position_difference_ -= position_diff;
-
-      tracked_frame_remaining_orientation_difference_ = tracked_frame_remaining_orientation_difference_ *
-                                                        (tracked_frame_last_orientation_.UnitInverse() *
-                                                         current_orientation);
-      Ogre::Quaternion orientation_diff = Ogre::Quaternion::Slerp( weight, Ogre::Quaternion::IDENTITY,
-                                                                   tracked_frame_remaining_orientation_difference_,
-                                                                   true );
-      tracked_frame_remaining_orientation_difference_ = Ogre::Quaternion::Slerp( 1 - weight,
-                                                                                 Ogre::Quaternion::IDENTITY,
-                                                                                 tracked_frame_remaining_orientation_difference_,
-                                                                                 true );
-
-      eye = orientation_diff * (eye - current_position) + current_position + position_diff;
-      focus = orientation_diff * (focus - current_position) + current_position + position_diff;
-      if ( in_animation_ )
-      {
-        // Correct animation goals
-        animation_eye_goal_ =
-          orientation_diff * (animation_eye_goal_ - current_position) + current_position + position_diff;
-        animation_focus_goal_ =
-          orientation_diff * (animation_focus_goal_ - current_position) + current_position + position_diff;
-      }
-
-      tracked_frame_last_position_ = current_position;
-      tracked_frame_last_orientation_ = current_orientation;
-      camera_position_changed = true;
-    }
-  }
-
-  if ( camera_position_changed )
-  {
-    disconnectPositionProperties();
-    eye_point_property_->setVector( eye );
-    focus_point_property_->setVector( focus );
-    updateDistance();
-    connectPositionProperties();
-  }
+  return true;
 }
 }
 

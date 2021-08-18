@@ -45,6 +45,8 @@ class VectorProperty;
 namespace hector_rviz_plugins
 {
 
+class CameraAnimator;
+
 namespace view_modes
 {
 enum ViewMode
@@ -101,6 +103,8 @@ public:
 
 public Q_SLOTS:
 
+  void onAnimationDurationChanged();
+
   void onEyePropertyChanged();
 
   void onFocusPointPropertyChanged();
@@ -108,6 +112,8 @@ public Q_SLOTS:
   void onDistancePropertyChanged();
 
   void onTrackedFrameChanged();
+
+  void onPGainChanged();
 
   void onMode2DChanged();
 
@@ -138,7 +144,7 @@ protected:
 
   void update( float dt, float ros_dt ) override;
 
-  virtual void updateCameraProperties( float dt );
+  virtual bool updateCameraProperties( float dt );
 
   virtual void updateCamera();
 
@@ -160,6 +166,9 @@ protected:
   ros::ServiceServer move_eye_and_focus_service_;
   ros::ServiceServer set_view_mode_service_;
   ros::ServiceServer track_frame_service_;
+
+  /* Animation & Frame Tracking */
+  std::unique_ptr<CameraAnimator> camera_animator_;
 
   /* RViz Properties */
   /* 3D */
@@ -183,32 +192,17 @@ protected:
   rviz::BoolProperty *enable_topics_property_ = nullptr;
   rviz::BoolProperty *enable_services_property_ = nullptr;
 
-  /* Flags */
-  bool position_properties_connected_ = false;
-  bool quick_mode_ = false;
-  bool dragging_ = false;
-  bool in_mode_transition_ = false;
-  ViewMode mode_ = view_modes::Mode3D;
-
-  /* Animation */
-  bool in_animation_ = false;
-  Ogre::Vector3 animation_eye_start_;
-  Ogre::Vector3 animation_eye_goal_;
-  Ogre::Vector3 animation_focus_start_;
-  Ogre::Vector3 animation_focus_goal_;
-  ros::WallTime animation_start_;
-
   /* Movement */
   int key_x_direction_ = 0;
   int key_y_direction_ = 0;
 
-  /* Frame Tracking */
-  bool is_frame_tracked_ = false;
-  std::string tracked_frame_;
-  Ogre::Vector3 tracked_frame_last_position_;
-  Ogre::Vector3 tracked_frame_remaining_position_difference_;
-  Ogre::Quaternion tracked_frame_last_orientation_;
-  Ogre::Quaternion tracked_frame_remaining_orientation_difference_;
+  /* Flags */
+  ViewMode mode_ = view_modes::Mode3D;
+  bool position_properties_connected_ = false;
+  bool quick_mode_ = false;
+  bool dragging_ = false;
+  bool in_mode_transition_ = false;
+
 };
 }
 #endif //HECTOR_RVIZ_PLUGINS_HECTOR_VIEW_CONTROLLER_H
