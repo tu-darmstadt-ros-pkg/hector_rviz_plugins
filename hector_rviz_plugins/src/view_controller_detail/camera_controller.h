@@ -38,10 +38,9 @@ public:
     animation_focus_goal_ = focus_goal;
 
     // Transform animation positions into tracked frame if we track a frame
-    if ( is_frame_tracked_ )
-    {
+    if ( is_frame_tracked_ ) {
       if ( !transformToTrackedFrame( animation_eye_start_, animation_eye_goal_,
-                                     animation_focus_start_, animation_focus_goal_ ))
+                                     animation_focus_start_, animation_focus_goal_ ) )
         return;
       clearTrackingOffsets();
     }
@@ -51,47 +50,48 @@ public:
     in_animation_ = true;
   }
 
-  static void transform( const Ogre::Quaternion &rotation, const Ogre::Vector3 &translation, Ogre::Vector3 &vec )
+  static void transform( const Ogre::Quaternion &rotation, const Ogre::Vector3 &translation,
+                         Ogre::Vector3 &vec )
   {
     vec = rotation * vec + translation;
   }
 
   template<typename... Args>
-  static void transform( const Ogre::Quaternion &rotation, const Ogre::Vector3 &translation, Ogre::Vector3 &vec,
-                         Args&&... args )
+  static void transform( const Ogre::Quaternion &rotation, const Ogre::Vector3 &translation,
+                         Ogre::Vector3 &vec, Args &&...args )
   {
     vec = rotation * vec + translation;
     // Template hack to allow passing multiple vectors to transform
-    transform( rotation, translation, std::forward<Args>(args)... );
+    transform( rotation, translation, std::forward<Args>( args )... );
   }
 
   template<typename... Args>
-  bool transformToTrackedFrame( Args&&... args )
+  bool transformToTrackedFrame( Args &&...args )
   {
     Ogre::Vector3 translation;
     Ogre::Quaternion rotation;
-    if ( !getTransformOrLogError( context_->getFrameManager(), tracked_frame_, ros::Time(), translation, rotation ))
-    {
+    if ( !getTransformOrLogError( context_->getFrameManager(), tracked_frame_, ros::Time(),
+                                  translation, rotation ) ) {
       in_animation_ = false;
       return false;
     }
     rotation = rotation.Inverse();
-    translation = -(rotation * translation);
-    transform( rotation, translation, std::forward<Args>(args)...);
+    translation = -( rotation * translation );
+    transform( rotation, translation, std::forward<Args>( args )... );
     return true;
   }
 
   template<typename... Args>
-  bool transformToFixedFrame( Args&&... args )
+  bool transformToFixedFrame( Args &&...args )
   {
     Ogre::Vector3 translation;
     Ogre::Quaternion rotation;
-    if ( !getTransformOrLogError( context_->getFrameManager(), tracked_frame_, ros::Time(), translation, rotation ))
-    {
+    if ( !getTransformOrLogError( context_->getFrameManager(), tracked_frame_, ros::Time(),
+                                  translation, rotation ) ) {
       in_animation_ = false;
       return false;
     }
-    transform( rotation, translation, std::forward<Args>(args)... );
+    transform( rotation, translation, std::forward<Args>( args )... );
     return true;
   }
 
@@ -102,7 +102,7 @@ public:
     Ogre::Vector3 current_position;
     Ogre::Quaternion current_orientation;
     if ( !getTransformOrLogError( context_->getFrameManager(), tracked_frame_, ros::Time(),
-                                  current_position, current_orientation ))
+                                  current_position, current_orientation ) )
       return;
     tracked_frame_last_position_ = current_position;
     tracked_frame_last_orientation_ = current_orientation;
@@ -111,31 +111,25 @@ public:
   void trackFrame( const std::string &name )
   {
     // Transform animation in fixed frame
-    if ( in_animation_ )
-    {
-      transformToFixedFrame( animation_eye_start_, animation_eye_goal_,
-                             animation_focus_start_, animation_focus_goal_ );
+    if ( in_animation_ ) {
+      transformToFixedFrame( animation_eye_start_, animation_eye_goal_, animation_focus_start_,
+                             animation_focus_goal_ );
     }
     is_frame_tracked_ = !name.empty();
     tracked_frame_ = name;
-    if ( is_frame_tracked_ )
-    {
+    if ( is_frame_tracked_ ) {
       context_->getFrameManager()->getTransform( name, ros::Time(), tracked_frame_last_position_,
                                                  tracked_frame_last_orientation_ );
       clearTrackingOffsets();
       // Transform animation back to new tracked frame
-      if ( in_animation_ )
-      {
-        transformToTrackedFrame( animation_eye_start_, animation_eye_goal_,
-                                 animation_focus_start_, animation_focus_goal_ );
+      if ( in_animation_ ) {
+        transformToTrackedFrame( animation_eye_start_, animation_eye_goal_, animation_focus_start_,
+                                 animation_focus_goal_ );
       }
     }
   }
 
-  void stopTracking()
-  {
-    is_frame_tracked_ = false;
-  }
+  void stopTracking() { is_frame_tracked_ = false; }
 
   bool isFrameTracked() const { return is_frame_tracked_; }
 
@@ -145,19 +139,17 @@ public:
 
   void setPGain( float value ) { p_gain_ = value; }
 
-  static bool getTransformOrLogError( rviz::FrameManager *frame_manager,
-                                      const std::string &frame, const ros::Time &time,
-                                      Ogre::Vector3 &pos_out, Ogre::Quaternion &q_out )
+  static bool getTransformOrLogError( rviz::FrameManager *frame_manager, const std::string &frame,
+                                      const ros::Time &time, Ogre::Vector3 &pos_out,
+                                      Ogre::Quaternion &q_out )
   {
-    if ( !frame_manager->getTransform( frame, ros::Time(), pos_out,
-                                       q_out ))
-    {
+    if ( !frame_manager->getTransform( frame, ros::Time(), pos_out, q_out ) ) {
       std::string error;
-      if ( !frame_manager->transformHasProblems( frame, ros::Time(), error ))
-      {
+      if ( !frame_manager->transformHasProblems( frame, ros::Time(), error ) ) {
         error = "Unknown";
       }
-      ROS_WARN_NAMED( "HectorViewController", "Could not get transform to tracked frame! Reason: %s", error.c_str());
+      ROS_WARN_NAMED( "HectorViewController",
+                      "Could not get transform to tracked frame! Reason: %s", error.c_str() );
       return false;
     }
     return true;
@@ -165,47 +157,45 @@ public:
 
   bool updateCamera( Ogre::Vector3 &eye, Ogre::Vector3 &focus, float dt )
   {
-    if ( !in_animation_ && !is_frame_tracked_ ) return false;
+    if ( !in_animation_ && !is_frame_tracked_ )
+      return false;
 
     bool in_animation = in_animation_;
-    if ( in_animation_ )
-    {
+    if ( in_animation_ ) {
       ros::WallDuration elapsed = ros::WallTime::now() - animation_start_;
-      float completed_percent = (float) elapsed.toSec() / animation_duration_;
-      if ( completed_percent < 1 )
-      {
+      float completed_percent = (float)elapsed.toSec() / animation_duration_;
+      if ( completed_percent < 1 ) {
         // The completed percent is adjusted to make a smooth transition
         // using this sigmoid function: https://www.wolframalpha.com/input/?i=y%3D(1%2F(1%2Be%5E(-12(x-0.5)))),+from+0+to+1
-        completed_percent = 1.f / (1 + expf( -12.f * (completed_percent - 0.5f)));
+        completed_percent = 1.f / ( 1 + expf( -12.f * ( completed_percent - 0.5f ) ) );
         Ogre::Vector3 animation_focus_goal_offset = animation_focus_goal_ - animation_focus_start_;
         Ogre::Vector3 animation_eye_goal_offset = animation_eye_goal_ - animation_eye_start_;
         focus = animation_focus_start_ + completed_percent * animation_focus_goal_offset;
         eye = animation_eye_start_ + completed_percent * animation_eye_goal_offset;
-      }
-      else if ( completed_percent >= 1 )
-      {
+      } else if ( completed_percent >= 1 ) {
         focus = animation_focus_goal_;
         eye = animation_eye_goal_;
         in_animation_ = false;
       }
     }
 
-    if ( !is_frame_tracked_ ) return true;
+    if ( !is_frame_tracked_ )
+      return true;
 
     Ogre::Vector3 current_position;
     Ogre::Quaternion current_orientation;
     if ( !getTransformOrLogError( context_->getFrameManager(), tracked_frame_, ros::Time(),
-                                  current_position, current_orientation ))
+                                  current_position, current_orientation ) )
       return true;
 
-    if ( in_animation )
-    {
+    if ( in_animation ) {
       // Transform animation vector to fixed frame
       transform( current_orientation, current_position, focus, eye );
     }
-    Ogre::Quaternion orientation_diff = (tracked_frame_last_orientation_.UnitInverse() *
-                                         current_orientation);
-    tracked_frame_remaining_position_difference_ = orientation_diff * tracked_frame_remaining_position_difference_;
+    Ogre::Quaternion orientation_diff =
+        ( tracked_frame_last_orientation_.UnitInverse() * current_orientation );
+    tracked_frame_remaining_position_difference_ =
+        orientation_diff * tracked_frame_remaining_position_difference_;
     tracked_frame_remaining_position_difference_ += current_position - tracked_frame_last_position_;
     float weight = std::min<float>( p_gain_ * dt, 1 );
     Ogre::Vector3 position_delta = tracked_frame_remaining_position_difference_ * weight;
@@ -216,21 +206,21 @@ public:
     orientation_diff.y = 0;
     orientation_diff.normalise();
     tracked_frame_remaining_orientation_difference_ =
-      orientation_diff * tracked_frame_remaining_orientation_difference_;
+        orientation_diff * tracked_frame_remaining_orientation_difference_;
     tracked_frame_remaining_orientation_difference_.x = 0;
     tracked_frame_remaining_orientation_difference_.y = 0;
     tracked_frame_remaining_orientation_difference_.normalise();
-    Ogre::Quaternion orientation_delta = Ogre::Quaternion::Slerp( weight, Ogre::Quaternion::IDENTITY,
-                                                                  tracked_frame_remaining_orientation_difference_,
-                                                                  true );
-    tracked_frame_remaining_orientation_difference_ = Ogre::Quaternion::Slerp( 1 - weight,
-                                                                               Ogre::Quaternion::IDENTITY,
-                                                                               tracked_frame_remaining_orientation_difference_,
-                                                                               true );
+    Ogre::Quaternion orientation_delta = Ogre::Quaternion::Slerp(
+        weight, Ogre::Quaternion::IDENTITY, tracked_frame_remaining_orientation_difference_, true );
+    tracked_frame_remaining_orientation_difference_ =
+        Ogre::Quaternion::Slerp( 1 - weight, Ogre::Quaternion::IDENTITY,
+                                 tracked_frame_remaining_orientation_difference_, true );
 
-    Ogre::Vector3 offset = (tracked_frame_last_position_ + current_position) / 2;
-    eye = orientation_delta * (eye - tracked_frame_last_position_) + tracked_frame_last_position_ + position_delta;
-    focus = orientation_delta * (focus - tracked_frame_last_position_) + tracked_frame_last_position_ + position_delta;
+    Ogre::Vector3 offset = ( tracked_frame_last_position_ + current_position ) / 2;
+    eye = orientation_delta * ( eye - tracked_frame_last_position_ ) +
+          tracked_frame_last_position_ + position_delta;
+    focus = orientation_delta * ( focus - tracked_frame_last_position_ ) +
+            tracked_frame_last_position_ + position_delta;
 
     tracked_frame_last_position_ = current_position;
     tracked_frame_last_orientation_ = current_orientation;
@@ -238,10 +228,7 @@ public:
     return true;
   }
 
-  void stop()
-  {
-    in_animation_ = false;
-  }
+  void stop() { in_animation_ = false; }
 
   void setAnimationDuration( float value ) { animation_duration_ = value; }
 
@@ -264,6 +251,6 @@ private:
 
   rviz::DisplayContext *context_;
 };
-}
+} // namespace hector_rviz_plugins
 
-#endif //HECTOR_RVIZ_PLUGINS_CAMERA_CONTROLLER_H
+#endif // HECTOR_RVIZ_PLUGINS_CAMERA_CONTROLLER_H

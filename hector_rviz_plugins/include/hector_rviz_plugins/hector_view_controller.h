@@ -40,7 +40,7 @@ class Shape;
 class TfFrameProperty;
 
 class VectorProperty;
-}
+} // namespace rviz
 
 namespace hector_rviz_plugins
 {
@@ -49,18 +49,13 @@ class CameraAnimator;
 
 namespace view_modes
 {
-enum ViewMode
-{
-  Mode3D = 0,
-  Mode2D = 1
-};
+enum ViewMode { Mode3D = 0, Mode2D = 1 };
 }
 using ViewMode = view_modes::ViewMode;
 
-class HectorViewController
-  : public rviz::ViewController
+class HectorViewController : public rviz::ViewController
 {
-Q_OBJECT
+  Q_OBJECT
 
 public:
   HectorViewController();
@@ -86,8 +81,9 @@ public:
   void moveEyeWithFocusTo( const Ogre::Vector3 &eye, bool stop_tracking = true, bool animate = true,
                            bool switch_to_3d_mode = false );
 
-  void moveEyeWithNewFocus( const Ogre::Vector3 &eye, const Ogre::Vector3 &focus, bool stop_tracking = true,
-                            bool animate = true, bool switch_to_3d_mode = true );
+  void moveEyeWithNewFocus( const Ogre::Vector3 &eye, const Ogre::Vector3 &focus,
+                            bool stop_tracking = true, bool animate = true,
+                            bool switch_to_3d_mode = true );
 
   void cancelAnimation();
 
@@ -202,7 +198,6 @@ protected:
   bool quick_mode_ = false;
   bool dragging_ = false;
   bool in_mode_transition_ = false;
-
 };
-}
-#endif //HECTOR_RVIZ_PLUGINS_HECTOR_VIEW_CONTROLLER_H
+} // namespace hector_rviz_plugins
+#endif // HECTOR_RVIZ_PLUGINS_HECTOR_VIEW_CONTROLLER_H

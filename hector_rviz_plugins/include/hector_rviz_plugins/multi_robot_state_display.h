@@ -33,7 +33,7 @@ class PrivateRobotStateDisplayHelper;
 
 class MultiRobotStateDisplay : public rviz::Display
 {
-Q_OBJECT
+  Q_OBJECT
 public:
   MultiRobotStateDisplay();
 
@@ -50,7 +50,6 @@ public:
   void onEnableChanged() override;
 
 protected:
-
   void onNewMultiRobotState( const hector_rviz_plugins_msgs::DisplayMultiRobotStateConstPtr &msg );
 
   std::unordered_map<std::string, PrivateRobotStateDisplayHelper *> displays_;
@@ -60,6 +59,6 @@ protected:
   rviz::RosTopicProperty *topic_property_;
   bool needs_state_update_ = false;
 };
-}
+} // namespace hector_rviz_plugins
 
-#endif //HECTOR_RVIZ_PLUGINS_MULTI_ROBOT_STATE_DISPLAY_H
+#endif // HECTOR_RVIZ_PLUGINS_MULTI_ROBOT_STATE_DISPLAY_H
