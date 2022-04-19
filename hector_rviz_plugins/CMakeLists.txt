@@ -27,12 +27,14 @@ include_directories(
 )
 
 set(HEADERS
+  include/hector_rviz_plugins/graph_display.h
   include/hector_rviz_plugins/hector_view_controller.h
   include/hector_rviz_plugins/multi_robot_state_display.h
   include/hector_rviz_plugins/pointcloud_filter_display.h
 )
 
 set(SOURCES
+  src/graph_display.cpp
   src/hector_view_controller.cpp
   src/multi_robot_state_display.cpp
   src/pointcloud_filter_display.cpp

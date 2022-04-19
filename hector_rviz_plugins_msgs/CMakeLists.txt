@@ -6,6 +6,8 @@ find_package(catkin REQUIRED COMPONENTS geometry_msgs message_generation moveit_
 ## Generate messages in the 'msg' folder
 add_message_files(
   FILES
+    GraphNode.msg
+    Graph.msg
     MultiRobotStateEntry.msg
     DisplayMultiRobotState.msg
     ViewMode.msg

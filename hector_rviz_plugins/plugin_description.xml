@@ -1,4 +1,9 @@
 <library path="libhector_rviz_plugins">
+  <class name="hector_rviz_plugins/GraphDisplay" type="hector_rviz_plugins::GraphDisplay" base_class_type="rviz::Display">
+    <description>
+      Displays a graph message.
+    </description>
+  </class>
   <class name="hector_rviz_plugins/HectorViewController" type="hector_rviz_plugins::HectorViewController" base_class_type="rviz::ViewController">
     <description>
       A view controller with support for animation, movement using the arrow keys, 2D and 3D mode as well as ROS interfaces for control by external nodes.
