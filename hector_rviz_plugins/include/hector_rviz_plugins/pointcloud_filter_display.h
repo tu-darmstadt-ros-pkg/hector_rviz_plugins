@@ -23,65 +23,80 @@
 #include <deque>
 #include <rviz/default_plugin/point_cloud_common.h>
 
-namespace rviz
-{
-class BoolProperty;
-class FloatProperty;
-class EnumProperty;
-class TfFrameProperty;
+namespace rviz {
+    class BoolProperty;
+
+    class FloatProperty;
+
+    class EnumProperty;
+
+    class TfFrameProperty;
 } // namespace rviz
 
-namespace pcl
-{
-template<class T>
-class PassThrough;
-template<class T>
-class PointCloud;
+namespace pcl {
+    template<class T>
+    class PassThrough;
+
+    template<class T>
+    class PointCloud;
 } // namespace pcl
 
-namespace hector_rviz_plugins
-{
+namespace hector_rviz_plugins {
 
-class PointCloudFilterDisplay : public rviz::MessageFilterDisplay<sensor_msgs::PointCloud2>
-{
-  Q_OBJECT
-public:
-  PointCloudFilterDisplay();
-  ~PointCloudFilterDisplay() override;
+    class PointCloudFilterDisplay : public rviz::MessageFilterDisplay<sensor_msgs::PointCloud2> {
+    Q_OBJECT
+    public:
+        PointCloudFilterDisplay();
 
-  void reset() override;
+        ~PointCloudFilterDisplay() override;
 
-  void update( float wall_dt, float ros_dt ) override;
+        void reset() override;
 
-protected:
-  void onInitialize() override;
+        void update(float wall_dt, float ros_dt) override;
 
-  void processMessage( const sensor_msgs::PointCloud2ConstPtr &cloud ) override;
+    protected:
+        void onInitialize() override;
 
-  template<class T>
-  void filterCloud( pcl::PassThrough<T> filter, typename pcl::PointCloud<T>::Ptr cloud );
+        void processMessage(const sensor_msgs::PointCloud2ConstPtr& msg) override;
 
-  std::string selected_frame;
-  std::string selected_axis;
-  bool filtering;
+        std::string selectedFrame_;
+        std::string selectedAxis_;
+        bool filtering_;
+        bool radialFiltering_;
+        bool xFiltering_;
+        bool yFiltering_;
+        bool zFiltering_;
 
-  rviz::BoolProperty *filter_property_;
-  rviz::EnumProperty *axis_property_;
-  rviz::FloatProperty *min_value_property_;
-  rviz::FloatProperty *max_value_property_;
-  rviz::TfFrameProperty *frame_property_;
+        rviz::BoolProperty *filterProperty_;
+        rviz::BoolProperty *radialFilterProperty_;
+        rviz::BoolProperty *xFilterProperty_;
+        rviz::BoolProperty *yFilterProperty_;
+        rviz::BoolProperty *zFilterProperty_;
 
-  typedef std::deque<sensor_msgs::PointCloud2ConstPtr> D_CloudInfo;
-  D_CloudInfo cloud_q;
+        rviz::FloatProperty *maxRadialDistanceProperty_;
+        rviz::FloatProperty *xMinValueProperty_;
+        rviz::FloatProperty *xMaxValueProperty_;
+        rviz::FloatProperty *yMinValueProperty_;
+        rviz::FloatProperty *yMaxValueProperty_;
+        rviz::FloatProperty *zMinValueProperty_;
+        rviz::FloatProperty *zMaxValueProperty_;
+        rviz::TfFrameProperty *frameProperty_;
 
-  rviz::PointCloudCommon *point_cloud_common_;
+        typedef std::deque<sensor_msgs::PointCloud2ConstPtr> D_CloudInfo;
+        D_CloudInfo cloudQ_;
 
-  enum Axis { X, Y, Z };
+        rviz::PointCloudCommon *pointCloudCommon_;
 
-private Q_SLOTS:
-  void updateParameters();
-  void enableFiltering();
-};
+        enum Axis {
+            X, Y, Z
+        };
+
+    private Q_SLOTS:
+
+        void updateParameters();
+
+        void enableFiltering();
+    };
 
 } // namespace hector_rviz_plugins
 
