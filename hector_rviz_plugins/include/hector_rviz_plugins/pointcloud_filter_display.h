@@ -20,6 +20,9 @@
 
 #include <rviz/message_filter_display.h>
 
+
+#include <tf/transform_listener.h>
+
 #include <deque>
 #include <rviz/default_plugin/point_cloud_common.h>
 
@@ -78,7 +81,7 @@ namespace hector_rviz_plugins {
          * @param cloud The PointCloud2 message
          * @return The filtered PointCloud2 message
          */
-        sensor_msgs::PointCloud2Ptr filterPointCloud(const sensor_msgs::PointCloud2Ptr &cloud);
+        sensor_msgs::PointCloud2Ptr filterPointCloud(const sensor_msgs::PointCloud2ConstPtr &msg);
 
         /**
          * @brief processMessage
@@ -100,6 +103,7 @@ namespace hector_rviz_plugins {
         rviz::BoolProperty *xFilterProperty_;
         rviz::BoolProperty *yFilterProperty_;
         rviz::BoolProperty *zFilterProperty_;
+        rviz::BoolProperty *useAxesFrameProperty_;
 
         rviz::FloatProperty *maxRadialDistanceProperty_;
         rviz::FloatProperty *xMinValueProperty_;
@@ -109,6 +113,7 @@ namespace hector_rviz_plugins {
         rviz::FloatProperty *zMinValueProperty_;
         rviz::FloatProperty *zMaxValueProperty_;
         rviz::TfFrameProperty *frameProperty_;
+        rviz::TfFrameProperty *axesFrameProperty_;
 
         typedef std::deque<sensor_msgs::PointCloud2ConstPtr> D_CloudInfo;
         /*

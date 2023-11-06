@@ -86,8 +86,15 @@ namespace hector_rviz_plugins {
                                                      zFilterProperty_, SLOT(updateParameters()), this);
 
         frameProperty_ = new rviz::TfFrameProperty("Frame", "world",
-                                                   "The frame to which the points are displayed relatively.",
+                                                   "The frame to which the points are filtered to relatively.",
                                                    filterProperty_, nullptr, true, SLOT(updateParameters()), this);
+
+        useAxesFrameProperty_ = new rviz::BoolProperty("Use other Axes", false,
+                                                       "Whether to use a different Frame for the axes that filtering is based on",
+                                                       filterProperty_, SLOT(updateParameters()), this);
+        axesFrameProperty_ = new rviz::TfFrameProperty("Axes Frame", "world",
+                                                       "The frame used for the filter axes.",
+                                                       useAxesFrameProperty_, nullptr, true, SLOT(updateParameters()), this);
     }
 
     PointCloudFilterDisplay::~PointCloudFilterDisplay() = default;
@@ -99,6 +106,8 @@ namespace hector_rviz_plugins {
         selectedFrame_ = context_->getFixedFrame().toStdString();
         frameProperty_->setFrameManager(context_->getFrameManager());
         frameProperty_->setStdString(selectedFrame_);
+        axesFrameProperty_->setFrameManager(context_->getFrameManager());
+        axesFrameProperty_->setStdString(selectedFrame_);
         pointCloudCommon_->initialize(context_, scene_node_);
     }
 
@@ -107,7 +116,7 @@ namespace hector_rviz_plugins {
         //Then, the cloud does not need to be registered again but just filtered with the new parameters.
         bool knownCloud = false;
         auto it = cloudQ_.begin();
-        while(it != cloudQ_.end()){
+        while (it != cloudQ_.end()) {
             if (it->get()->header.stamp == msg->header.stamp) {
                 knownCloud = true;
                 break;
@@ -126,32 +135,47 @@ namespace hector_rviz_plugins {
             cloudQ_.pop_front();
         }
 
-        if(filtering_){
-            // Transform cloud into the selected frame
-            sensor_msgs::PointCloud2Ptr cloud(new sensor_msgs::PointCloud2);
-            if (!context_->getFrameManager()->getTF2BufferPtr()->canTransform(
-                    selectedFrame_, msg->header.frame_id, msg->header.stamp, ros::Duration(0.0))) {
-                ROS_DEBUG("Selected frame %s is not available!", selectedFrame_.c_str());
-                return;
-            }
-            pcl_ros::transformPointCloud(selectedFrame_, *msg, *cloud, *context_->getFrameManager()->getTF2BufferPtr());
+        if (!knownCloud)
+            cloudQ_.emplace_back(msg);
 
-            if (!knownCloud)
-                cloudQ_.emplace_back(cloud);
-
-            sensor_msgs::PointCloud2Ptr filtered = filterPointCloud(cloud);
+        if (filtering_) {
+            sensor_msgs::PointCloud2Ptr filtered = filterPointCloud(msg);
             if (filtered) {
                 pointCloudCommon_->addMessage(filtered);
             }
         } else {
-            // If filtering is disabled, just add the cloud to the queue and pass it to point_cloud_common
-            if (!knownCloud)
-                cloudQ_.emplace_back(msg);
             pointCloudCommon_->addMessage(msg);
         }
     }
 
-    sensor_msgs::PointCloud2Ptr PointCloudFilterDisplay::filterPointCloud(const sensor_msgs::PointCloud2Ptr &cloud) {
+    sensor_msgs::PointCloud2Ptr PointCloudFilterDisplay::filterPointCloud(const sensor_msgs::PointCloud2ConstPtr &msg) {
+        sensor_msgs::PointCloud2Ptr cloud(new sensor_msgs::PointCloud2);
+        std::string targetFrame;
+        bool useAxesFrame = useAxesFrameProperty_->getBool();
+
+        if (useAxesFrame) {
+            // PointCloud gets transformed into the world frame and filtered relative to the position of the selected frame
+            if (axesFrameProperty_->getStdString() == "<Fixed Frame>")
+                targetFrame = context_->getFixedFrame().toStdString();
+            else
+                targetFrame = axesFrameProperty_->getFrameStd();
+
+            if (!context_->getFrameManager()->getTF2BufferPtr()->canTransform(
+                    targetFrame, selectedFrame_, ros::Time(0), ros::Duration(0.0))) {
+                ROS_DEBUG("Selected frame %s is not available!", selectedFrame_.c_str());
+                return nullptr;
+            }
+        } else {
+            // PointCloud gets transformed into the selected frame and filtered
+            targetFrame = selectedFrame_;
+            if (!context_->getFrameManager()->getTF2BufferPtr()->canTransform(
+                    selectedFrame_, msg->header.frame_id, msg->header.stamp, ros::Duration(0.0))) {
+                ROS_DEBUG("Selected frame %s is not available!", selectedFrame_.c_str());
+                return nullptr;
+            }
+        }
+        pcl_ros::transformPointCloud(targetFrame, *msg, *cloud, *context_->getFrameManager()->getTF2BufferPtr());
+
         // Filter any nan values out of the cloud. Any nan values that make it through to PointCloudBase
         // will get their points put off in lala land, but it means they still do get processed/rendered
         // which can be a big performance hit
@@ -196,11 +220,12 @@ namespace hector_rviz_plugins {
             zFiltering_ = zFilterProperty_->getBool();
             float maxRadialDist2 = maxRadialDistanceProperty_->getFloat() * maxRadialDistanceProperty_->getFloat();
 
-            /*
-            tfListener_ = std::make_shared<tf2_ros::TransformListener>(tfBuffer_);
-            geometry_msgs::Transform trans = tfBuffer_.lookupTransform("world", frameId, ros::Time(0), ros::Duration(1)).transform;
-            Eigen::Vector3d pos(trans.translation.x, trans.translation.y, trans.translation.z);
-             */
+            Eigen::Vector3f relativePos(0, 0, 0);
+            if(useAxesFrame){
+                geometry_msgs::Transform trans = context_->getFrameManager()->getTF2BufferPtr()->lookupTransform(
+                        targetFrame, selectedFrame_, ros::Time(0), ros::Duration(0.0)).transform;
+                relativePos = {(float)trans.translation.x, (float)trans.translation.y, (float)trans.translation.z};
+            }
 
             //Filter points out depending on the selected axis and the min and max values set and the radial distance
             for (; ptr < ptrEnd; ptr += pointStep) {
@@ -211,6 +236,11 @@ namespace hector_rviz_plugins {
                 // Check for NaNs. If any of x,y,z is a NaN, skip the whole point.
                 bool addPoint = true;
                 if (rviz::validateFloats(x) && rviz::validateFloats(y) && rviz::validateFloats(z) && filtering_) {
+                    if(useAxesFrame){
+                        x -= relativePos.x();
+                        y -= relativePos.y();
+                        z -= relativePos.z();
+                    }
                     // Check for min and max values for the selected axis and radial distance
                     if (xFiltering_) {
                         addPoint = x < xMaxValueProperty_->getFloat() && x > xMinValueProperty_->getFloat();
