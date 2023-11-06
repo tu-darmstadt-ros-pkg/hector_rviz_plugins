@@ -12,6 +12,6 @@ An RViz display to display multiple robot states with possibly differing positio
 ![Two robot states with different poses](multi_robot_state_display.png)
 
 ## PointCloudFilter
-An RViz display that allows to filter a point cloud spatially, i.e. removes points that lie above a specified theshold in a given direction (x,y,z) of a coordinate system.
+An RViz display that allows to filter a point cloud spatially, i.e. removes points that lie above a specified theshold in a given direction (x,y,z) or max radial distance of a coordinate system.
 
 ![Filtering points with too big z-values](point_cloud_filter_display.png)
