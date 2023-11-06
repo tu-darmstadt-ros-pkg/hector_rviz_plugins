@@ -43,58 +43,58 @@
 
 namespace hector_rviz_plugins {
     PointCloudFilterDisplay::PointCloudFilterDisplay()
-            : pointCloudCommon_(new rviz::PointCloudCommon(this)), cloudQ_() {
+            : point_cloud_common_(new rviz::PointCloudCommon(this)), cloud_q_() {
         pcl::console::setVerbosityLevel(pcl::console::L_ERROR);
 
         filtering_ = false;
-        radialFiltering_ = false;
-        xFiltering_ = false;
-        yFiltering_ = false;
-        zFiltering_ = false;
+        radial_filtering_ = false;
+        x_filtering_ = false;
+        y_filtering_ = false;
+        z_filtering_ = false;
 
-        filterProperty_ = new rviz::BoolProperty("Enable filtering", filtering_, "Whether to enable filtering or not",
-                                                 this, SLOT(enableFiltering()), this);
+        filter_property_ = new rviz::BoolProperty("Enable filtering", filtering_, "Whether to enable filtering or not",
+                                                  this, SLOT(enableFiltering()), this);
 
-        radialFilterProperty_ = new rviz::BoolProperty("Radial Filter", radialFiltering_,
-                                                       "Whether to enable radial filtering or not", filterProperty_,
-                                                       SLOT(updateParameters()), this);
-        maxRadialDistanceProperty_ = new rviz::FloatProperty("Radius", 5.0,
-                                                             "Maximum distance from the origin for points to be displayed in meter.",
-                                                             radialFilterProperty_, SLOT(updateParameters()), this);
+        radial_filter_property_ = new rviz::BoolProperty("Radial Filter", radial_filtering_,
+                                                         "Whether to enable radial filtering or not", filter_property_,
+                                                         SLOT(updateParameters()), this);
+        max_radial_distance_property_ = new rviz::FloatProperty("Radius", 5.0,
+                                                                "Maximum distance from the origin for points to be displayed in meter.",
+                                                                radial_filter_property_, SLOT(updateParameters()), this);
 
-        xFilterProperty_ = new rviz::BoolProperty("X Filter", xFiltering_,
-                                                  "Activates X-Coord Filter", filterProperty_,
-                                                  SLOT(updateParameters()), this);
-        yFilterProperty_ = new rviz::BoolProperty("Y Filter", yFiltering_,
-                                                  "Activates Y-Coord Filter", filterProperty_,
-                                                  SLOT(updateParameters()), this);
-        zFilterProperty_ = new rviz::BoolProperty("Z Filter", zFiltering_,
-                                                  "Activates Z-Coord Filter", filterProperty_,
-                                                  SLOT(updateParameters()), this);
+        x_filter_property_ = new rviz::BoolProperty("X Filter", x_filtering_,
+                                                    "Activates X-Coord Filter", filter_property_,
+                                                    SLOT(updateParameters()), this);
+        y_filter_property_ = new rviz::BoolProperty("Y Filter", y_filtering_,
+                                                    "Activates Y-Coord Filter", filter_property_,
+                                                    SLOT(updateParameters()), this);
+        z_filter_property_ = new rviz::BoolProperty("Z Filter", z_filtering_,
+                                                    "Activates Z-Coord Filter", filter_property_,
+                                                    SLOT(updateParameters()), this);
 
-        xMinValueProperty_ = new rviz::FloatProperty("X Min Value", -2.0, "Minimum value for points to be displayed.",
-                                                     xFilterProperty_, SLOT(updateParameters()), this);
-        xMaxValueProperty_ = new rviz::FloatProperty("X Max Value", 2.0, "Maximum value for points to be displayed.",
-                                                     xFilterProperty_, SLOT(updateParameters()), this);
-        yMinValueProperty_ = new rviz::FloatProperty("Y Min Value", -2.0, "Minimum value for points to be displayed.",
-                                                     yFilterProperty_, SLOT(updateParameters()), this);
-        yMaxValueProperty_ = new rviz::FloatProperty("Y Max Value", 2.0, "Maximum value for points to be displayed.",
-                                                     yFilterProperty_, SLOT(updateParameters()), this);
-        zMinValueProperty_ = new rviz::FloatProperty("Z Min Value", -2.0, "Minimum value for points to be displayed.",
-                                                     zFilterProperty_, SLOT(updateParameters()), this);
-        zMaxValueProperty_ = new rviz::FloatProperty("Z Max Value", 2.0, "Maximum value for points to be displayed.",
-                                                     zFilterProperty_, SLOT(updateParameters()), this);
+        x_min_value_property_ = new rviz::FloatProperty("X Min Value", -2.0, "Minimum value for points to be displayed.",
+                                                        x_filter_property_, SLOT(updateParameters()), this);
+        x_max_value_property_ = new rviz::FloatProperty("X Max Value", 2.0, "Maximum value for points to be displayed.",
+                                                        x_filter_property_, SLOT(updateParameters()), this);
+        y_min_value_property_ = new rviz::FloatProperty("Y Min Value", -2.0, "Minimum value for points to be displayed.",
+                                                        y_filter_property_, SLOT(updateParameters()), this);
+        y_max_value_property_ = new rviz::FloatProperty("Y Max Value", 2.0, "Maximum value for points to be displayed.",
+                                                        y_filter_property_, SLOT(updateParameters()), this);
+        z_min_value_property_ = new rviz::FloatProperty("Z Min Value", -2.0, "Minimum value for points to be displayed.",
+                                                        z_filter_property_, SLOT(updateParameters()), this);
+        z_max_value_property_ = new rviz::FloatProperty("Z Max Value", 2.0, "Maximum value for points to be displayed.",
+                                                        z_filter_property_, SLOT(updateParameters()), this);
 
-        frameProperty_ = new rviz::TfFrameProperty("Frame", "world",
-                                                   "The frame to which the points are filtered to relatively.",
-                                                   filterProperty_, nullptr, true, SLOT(updateParameters()), this);
+        frame_property_ = new rviz::TfFrameProperty("Frame", "world",
+                                                    "The frame to which the points are filtered to relatively.",
+                                                    filter_property_, nullptr, true, SLOT(updateParameters()), this);
 
-        useAxesFrameProperty_ = new rviz::BoolProperty("Use other Axes", false,
-                                                       "Whether to use a different Frame for the axes that filtering is based on",
-                                                       filterProperty_, SLOT(updateParameters()), this);
-        axesFrameProperty_ = new rviz::TfFrameProperty("Axes Frame", "world",
-                                                       "The frame used for the filter axes.",
-                                                       useAxesFrameProperty_, nullptr, true, SLOT(updateParameters()), this);
+        use_axes_frame_property_ = new rviz::BoolProperty("Use other Axes", false,
+                                                          "Whether to use a different Frame for the axes that filtering is based on",
+                                                          filter_property_, SLOT(updateParameters()), this);
+        axes_frame_property_ = new rviz::TfFrameProperty("Axes Frame", "world",
+                                                         "The frame used for the filter axes.",
+                                                         use_axes_frame_property_, nullptr, true, SLOT(updateParameters()), this);
     }
 
     PointCloudFilterDisplay::~PointCloudFilterDisplay() = default;
@@ -103,78 +103,78 @@ namespace hector_rviz_plugins {
         MFDClass::onInitialize();
         update_nh_.setCallbackQueue(context_->getThreadedQueue());
 
-        selectedFrame_ = context_->getFixedFrame().toStdString();
-        frameProperty_->setFrameManager(context_->getFrameManager());
-        frameProperty_->setStdString(selectedFrame_);
-        axesFrameProperty_->setFrameManager(context_->getFrameManager());
-        axesFrameProperty_->setStdString(selectedFrame_);
-        pointCloudCommon_->initialize(context_, scene_node_);
+        selected_frame_ = context_->getFixedFrame().toStdString();
+        frame_property_->setFrameManager(context_->getFrameManager());
+        frame_property_->setStdString(selected_frame_);
+        axes_frame_property_->setFrameManager(context_->getFrameManager());
+        axes_frame_property_->setStdString(selected_frame_);
+        point_cloud_common_->initialize(context_, scene_node_);
     }
 
     void PointCloudFilterDisplay::processMessage(const sensor_msgs::PointCloud2ConstPtr &msg) {
         //Check whether pointcloud was already saved, if yes parameter update occurred.
         //Then, the cloud does not need to be registered again but just filtered with the new parameters.
-        bool knownCloud = false;
-        auto it = cloudQ_.begin();
-        while (it != cloudQ_.end()) {
+        bool known_cloud = false;
+        auto it = cloud_q_.begin();
+        while (it != cloud_q_.end()) {
             if (it->get()->header.stamp == msg->header.stamp) {
-                knownCloud = true;
+                known_cloud = true;
                 break;
             }
             ++it;
         }
 
         // Check for old clouds outside of decay time
-        auto nowSec = ros::Time::now().toSec();
-        while (!cloudQ_.empty() && nowSec - cloudQ_.front()->header.stamp.toSec() >
-                                   pointCloudCommon_->decay_time_property_->getFloat()) {
-            if (cloudQ_.front()->header.stamp.toSec() == msg->header.stamp.toSec()) {
-                cloudQ_.pop_front();
+        auto now_sec = ros::Time::now().toSec();
+        while (!cloud_q_.empty() && now_sec - cloud_q_.front()->header.stamp.toSec() >
+                                    point_cloud_common_->decay_time_property_->getFloat()) {
+            if (cloud_q_.front()->header.stamp.toSec() == msg->header.stamp.toSec()) {
+                cloud_q_.pop_front();
                 return;
             }
-            cloudQ_.pop_front();
+            cloud_q_.pop_front();
         }
 
-        if (!knownCloud)
-            cloudQ_.emplace_back(msg);
+        if (!known_cloud)
+            cloud_q_.emplace_back(msg);
 
         if (filtering_) {
             sensor_msgs::PointCloud2Ptr filtered = filterPointCloud(msg);
             if (filtered) {
-                pointCloudCommon_->addMessage(filtered);
+                point_cloud_common_->addMessage(filtered);
             }
         } else {
-            pointCloudCommon_->addMessage(msg);
+            point_cloud_common_->addMessage(msg);
         }
     }
 
     sensor_msgs::PointCloud2Ptr PointCloudFilterDisplay::filterPointCloud(const sensor_msgs::PointCloud2ConstPtr &msg) {
         sensor_msgs::PointCloud2Ptr cloud(new sensor_msgs::PointCloud2);
-        std::string targetFrame;
-        bool useAxesFrame = useAxesFrameProperty_->getBool();
+        std::string target_frame;
+        bool use_axes_frame = use_axes_frame_property_->getBool();
 
-        if (useAxesFrame) {
+        if (use_axes_frame) {
             // PointCloud gets transformed into the world frame and filtered relative to the position of the selected frame
-            if (axesFrameProperty_->getStdString() == "<Fixed Frame>")
-                targetFrame = context_->getFixedFrame().toStdString();
+            if (axes_frame_property_->getStdString() == "<Fixed Frame>")
+                target_frame = context_->getFixedFrame().toStdString();
             else
-                targetFrame = axesFrameProperty_->getFrameStd();
+                target_frame = axes_frame_property_->getFrameStd();
 
             if (!context_->getFrameManager()->getTF2BufferPtr()->canTransform(
-                    targetFrame, selectedFrame_, ros::Time(0), ros::Duration(0.0))) {
-                ROS_DEBUG("Selected frame %s is not available!", selectedFrame_.c_str());
+                    target_frame, selected_frame_, ros::Time(0), ros::Duration(0.0))) {
+                ROS_DEBUG("Selected frame %s is not available!", selected_frame_.c_str());
                 return nullptr;
             }
         } else {
             // PointCloud gets transformed into the selected frame and filtered
-            targetFrame = selectedFrame_;
+            target_frame = selected_frame_;
             if (!context_->getFrameManager()->getTF2BufferPtr()->canTransform(
-                    selectedFrame_, msg->header.frame_id, msg->header.stamp, ros::Duration(0.0))) {
-                ROS_DEBUG("Selected frame %s is not available!", selectedFrame_.c_str());
+                    selected_frame_, msg->header.frame_id, msg->header.stamp, ros::Duration(0.0))) {
+                ROS_DEBUG("Selected frame %s is not available!", selected_frame_.c_str());
                 return nullptr;
             }
         }
-        pcl_ros::transformPointCloud(targetFrame, *msg, *cloud, *context_->getFrameManager()->getTF2BufferPtr());
+        pcl_ros::transformPointCloud(target_frame, *msg, *cloud, *context_->getFrameManager()->getTF2BufferPtr());
 
         // Filter any nan values out of the cloud. Any nan values that make it through to PointCloudBase
         // will get their points put off in lala land, but it means they still do get processed/rendered
@@ -187,134 +187,134 @@ namespace hector_rviz_plugins {
         if (xi == -1 || yi == -1 || zi == -1) {
             return nullptr;
         }
-        const uint32_t xOff = cloud->fields[xi].offset;
-        const uint32_t yOff = cloud->fields[yi].offset;
-        const uint32_t zOff = cloud->fields[zi].offset;
-        const uint32_t pointStep = cloud->point_step;
-        const size_t pointCount = cloud->width * cloud->height;
+        const uint32_t x_off = cloud->fields[xi].offset;
+        const uint32_t y_off = cloud->fields[yi].offset;
+        const uint32_t z_off = cloud->fields[zi].offset;
+        const uint32_t point_step = cloud->point_step;
+        const size_t point_count = cloud->width * cloud->height;
 
-        if (pointCount * pointStep != cloud->data.size()) {
+        if (point_count * point_step != cloud->data.size()) {
             std::stringstream ss;
             ss << "Data size (" << cloud->data.size() << " bytes) does not match width (" << cloud->width
-               << ") times height (" << cloud->height << ") times pointStep (" << pointStep
+               << ") times height (" << cloud->height << ") times point_step (" << point_step
                << ").  Dropping message.";
             setStatusStd(rviz::StatusProperty::Error, "Message", ss.str());
             return nullptr;
         }
         filtered->data.resize(cloud->data.size());
-        uint32_t outputCount;
+        uint32_t output_count;
 
-        if (pointCount == 0) {
-            outputCount = 0;
+        if (point_count == 0) {
+            output_count = 0;
         } else {
-            uint8_t *outputPtr = &filtered->data.front();
+            uint8_t *output_ptr = &filtered->data.front();
             const uint8_t *ptr = &cloud->data.front();
-            const uint8_t *ptrEnd = &cloud->data.back();
-            const uint8_t *ptrInit;
-            size_t pointsToCopy = 0;
+            const uint8_t *ptr_end = &cloud->data.back();
+            const uint8_t *ptr_init;
+            size_t points_to_copy = 0;
 
             // Get the parameters for the filtering
-            radialFiltering_ = radialFilterProperty_->getBool();
-            xFiltering_ = xFilterProperty_->getBool();
-            yFiltering_ = yFilterProperty_->getBool();
-            zFiltering_ = zFilterProperty_->getBool();
-            float maxRadialDist2 = maxRadialDistanceProperty_->getFloat() * maxRadialDistanceProperty_->getFloat();
+            radial_filtering_ = radial_filter_property_->getBool();
+            x_filtering_ = x_filter_property_->getBool();
+            y_filtering_ = y_filter_property_->getBool();
+            z_filtering_ = z_filter_property_->getBool();
+            float max_radial_dist_2 = max_radial_distance_property_->getFloat() * max_radial_distance_property_->getFloat();
 
             Eigen::Vector3f relativePos(0, 0, 0);
-            if(useAxesFrame){
+            if(use_axes_frame){
                 geometry_msgs::Transform trans = context_->getFrameManager()->getTF2BufferPtr()->lookupTransform(
-                        targetFrame, selectedFrame_, ros::Time(0), ros::Duration(0.0)).transform;
+                        target_frame, selected_frame_, ros::Time(0), ros::Duration(0.0)).transform;
                 relativePos = {(float)trans.translation.x, (float)trans.translation.y, (float)trans.translation.z};
             }
 
             //Filter points out depending on the selected axis and the min and max values set and the radial distance
-            for (; ptr < ptrEnd; ptr += pointStep) {
-                float x = *reinterpret_cast<const float *>(ptr + xOff);
-                float y = *reinterpret_cast<const float *>(ptr + yOff);
-                float z = *reinterpret_cast<const float *>(ptr + zOff);
+            for (; ptr < ptr_end; ptr += point_step) {
+                float x = *reinterpret_cast<const float *>(ptr + x_off);
+                float y = *reinterpret_cast<const float *>(ptr + y_off);
+                float z = *reinterpret_cast<const float *>(ptr + z_off);
 
                 // Check for NaNs. If any of x,y,z is a NaN, skip the whole point.
-                bool addPoint = true;
+                bool add_point = true;
                 if (rviz::validateFloats(x) && rviz::validateFloats(y) && rviz::validateFloats(z) && filtering_) {
-                    if(useAxesFrame){
+                    if(use_axes_frame){
                         x -= relativePos.x();
                         y -= relativePos.y();
                         z -= relativePos.z();
                     }
                     // Check for min and max values for the selected axis and radial distance
-                    if (xFiltering_) {
-                        addPoint = x < xMaxValueProperty_->getFloat() && x > xMinValueProperty_->getFloat();
+                    if (x_filtering_) {
+                        add_point = x < x_max_value_property_->getFloat() && x > x_min_value_property_->getFloat();
                     }
-                    if (addPoint && yFiltering_) {
-                        addPoint = y < yMaxValueProperty_->getFloat() && y > yMinValueProperty_->getFloat();
+                    if (add_point && y_filtering_) {
+                        add_point = y < y_max_value_property_->getFloat() && y > y_min_value_property_->getFloat();
                     }
-                    if (addPoint && zFiltering_) {
-                        addPoint = z < zMaxValueProperty_->getFloat() && z > zMinValueProperty_->getFloat();
+                    if (add_point && z_filtering_) {
+                        add_point = z < z_max_value_property_->getFloat() && z > z_min_value_property_->getFloat();
                     }
-                    if (addPoint && radialFiltering_) {
-                        addPoint = x * x + y * y + z * z < maxRadialDist2;
+                    if (add_point && radial_filtering_) {
+                        add_point = x * x + y * y + z * z < max_radial_dist_2;
                     }
                 } else {
-                    addPoint = false;
+                    add_point = false;
                 }
 
-                if (addPoint) {
-                    if (pointsToCopy == 0) {
+                if (add_point) {
+                    if (points_to_copy == 0) {
                         // Only memorize where to start copying from
-                        ptrInit = ptr;
-                        pointsToCopy = 1;
+                        ptr_init = ptr;
+                        points_to_copy = 1;
                     } else {
-                        ++pointsToCopy;
+                        ++points_to_copy;
                     }
                 } else {
-                    if (pointsToCopy) {
+                    if (points_to_copy) {
                         // Copy all the points that need to be copied
-                        memcpy(outputPtr, ptrInit, pointStep * pointsToCopy);
-                        outputPtr += pointStep * pointsToCopy;
-                        pointsToCopy = 0;
+                        memcpy(output_ptr, ptr_init, point_step * points_to_copy);
+                        output_ptr += point_step * points_to_copy;
+                        points_to_copy = 0;
                     }
                 }
             }
             // Don't forget to flush what needs to be copied
-            if (pointsToCopy) {
-                memcpy(outputPtr, ptrInit, pointStep * pointsToCopy);
-                outputPtr += pointStep * pointsToCopy;
+            if (points_to_copy) {
+                memcpy(output_ptr, ptr_init, point_step * points_to_copy);
+                output_ptr += point_step * points_to_copy;
             }
-            outputCount = (outputPtr - &filtered->data.front()) / pointStep;
+            output_count = (output_ptr - &filtered->data.front()) / point_step;
         }
 
         filtered->header = cloud->header;
         filtered->fields = cloud->fields;
-        filtered->data.resize(outputCount * pointStep);
+        filtered->data.resize(output_count * point_step);
         filtered->height = 1;
-        filtered->width = outputCount;
+        filtered->width = output_count;
         filtered->is_bigendian = cloud->is_bigendian;
-        filtered->point_step = pointStep;
-        filtered->row_step = outputCount;
+        filtered->point_step = point_step;
+        filtered->row_step = output_count;
         return filtered;
     }
 
     void PointCloudFilterDisplay::update(float wall_dt, float ros_dt) {
-        pointCloudCommon_->update(wall_dt, ros_dt);
+        point_cloud_common_->update(wall_dt, ros_dt);
     }
 
     void PointCloudFilterDisplay::reset() {
         MFDClass::reset();
-        pointCloudCommon_->reset();
-        cloudQ_.clear();
+        point_cloud_common_->reset();
+        cloud_q_.clear();
     }
 
     void PointCloudFilterDisplay::updateParameters() {
-        pointCloudCommon_->reset();
+        point_cloud_common_->reset();
 
-        if (frameProperty_->getStdString() == "<Fixed Frame>")
-            selectedFrame_ = context_->getFixedFrame().toStdString();
+        if (frame_property_->getStdString() == "<Fixed Frame>")
+            selected_frame_ = context_->getFixedFrame().toStdString();
         else
-            selectedFrame_ = frameProperty_->getFrameStd();
+            selected_frame_ = frame_property_->getFrameStd();
 
         // Process each saved cloud again with the changed parameters and pass to point_cloud_common
-        auto it = cloudQ_.begin();
-        auto end = cloudQ_.end();
+        auto it = cloud_q_.begin();
+        auto end = cloud_q_.end();
 
         for (; it != end; ++it) {
             const sensor_msgs::PointCloud2ConstPtr &cloud_msg = *it;
@@ -323,10 +323,10 @@ namespace hector_rviz_plugins {
     }
 
     void PointCloudFilterDisplay::enableFiltering() {
-        filtering_ = filterProperty_->getBool();
+        filtering_ = filter_property_->getBool();
 
         if (filtering_)
-            filterProperty_->expand();
+            filter_property_->expand();
 
         updateParameters();
     }

@@ -91,38 +91,38 @@ namespace hector_rviz_plugins {
          */
         void processMessage(const sensor_msgs::PointCloud2ConstPtr& msg) override;
 
-        std::string selectedFrame_;
+        std::string selected_frame_;
         bool filtering_;
-        bool radialFiltering_;
-        bool xFiltering_;
-        bool yFiltering_;
-        bool zFiltering_;
+        bool radial_filtering_;
+        bool x_filtering_;
+        bool y_filtering_;
+        bool z_filtering_;
 
-        rviz::BoolProperty *filterProperty_;
-        rviz::BoolProperty *radialFilterProperty_;
-        rviz::BoolProperty *xFilterProperty_;
-        rviz::BoolProperty *yFilterProperty_;
-        rviz::BoolProperty *zFilterProperty_;
-        rviz::BoolProperty *useAxesFrameProperty_;
+        rviz::BoolProperty *filter_property_;
+        rviz::BoolProperty *radial_filter_property_;
+        rviz::BoolProperty *x_filter_property_;
+        rviz::BoolProperty *y_filter_property_;
+        rviz::BoolProperty *z_filter_property_;
+        rviz::BoolProperty *use_axes_frame_property_;
 
-        rviz::FloatProperty *maxRadialDistanceProperty_;
-        rviz::FloatProperty *xMinValueProperty_;
-        rviz::FloatProperty *xMaxValueProperty_;
-        rviz::FloatProperty *yMinValueProperty_;
-        rviz::FloatProperty *yMaxValueProperty_;
-        rviz::FloatProperty *zMinValueProperty_;
-        rviz::FloatProperty *zMaxValueProperty_;
-        rviz::TfFrameProperty *frameProperty_;
-        rviz::TfFrameProperty *axesFrameProperty_;
+        rviz::FloatProperty *max_radial_distance_property_;
+        rviz::FloatProperty *x_min_value_property_;
+        rviz::FloatProperty *x_max_value_property_;
+        rviz::FloatProperty *y_min_value_property_;
+        rviz::FloatProperty *y_max_value_property_;
+        rviz::FloatProperty *z_min_value_property_;
+        rviz::FloatProperty *z_max_value_property_;
+        rviz::TfFrameProperty *frame_property_;
+        rviz::TfFrameProperty *axes_frame_property_;
 
         typedef std::deque<sensor_msgs::PointCloud2ConstPtr> D_CloudInfo;
         /*
-         * cloudQ_ is there so that in case of an accumulated pointCloud (decay_time > 0), the old data
+         * cloud_q_ is there so that in case of an accumulated pointCloud (decay_time > 0), the old data
          * of points filtered out is still available if the parameters for the filter are changed.
          * The decay_time is the time in seconds after which the old data is deleted. It can be set in rviz.
          */
-        D_CloudInfo cloudQ_;
-        rviz::PointCloudCommon *pointCloudCommon_;
+        D_CloudInfo cloud_q_;
+        rviz::PointCloudCommon *point_cloud_common_;
 
     private Q_SLOTS:
 
