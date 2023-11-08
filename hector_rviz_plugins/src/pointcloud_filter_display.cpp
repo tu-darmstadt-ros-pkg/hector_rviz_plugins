@@ -51,6 +51,7 @@ namespace hector_rviz_plugins {
         x_filtering_ = false;
         y_filtering_ = false;
         z_filtering_ = false;
+        channel_filtering_ = false;
 
         filter_property_ = new rviz::BoolProperty("Enable filtering", filtering_, "Whether to enable filtering or not",
                                                   this, SLOT(enableFiltering()), this);
@@ -60,7 +61,8 @@ namespace hector_rviz_plugins {
                                                          SLOT(updateParameters()), this);
         max_radial_distance_property_ = new rviz::FloatProperty("Radius", 5.0,
                                                                 "Maximum distance from the origin for points to be displayed in meter.",
-                                                                radial_filter_property_, SLOT(updateParameters()), this);
+                                                                radial_filter_property_, SLOT(updateParameters()),
+                                                                this);
 
         x_filter_property_ = new rviz::BoolProperty("X Filter", x_filtering_,
                                                     "Activates X-Coord Filter", filter_property_,
@@ -71,19 +73,37 @@ namespace hector_rviz_plugins {
         z_filter_property_ = new rviz::BoolProperty("Z Filter", z_filtering_,
                                                     "Activates Z-Coord Filter", filter_property_,
                                                     SLOT(updateParameters()), this);
+        filter_by_channel_value_property_ = new rviz::BoolProperty("Filter by Channel Value", channel_filtering_,
+                                                                   "Whether to filter by channel value or not",
+                                                                   filter_property_, SLOT(updateParameters()), this);
+        channel_property_ = new rviz::StringProperty("Channel", nullptr,
+                                                     "The channel to filter by", filter_by_channel_value_property_,
+                                                     SLOT(updateParameters()), this);
 
-        x_min_value_property_ = new rviz::FloatProperty("X Min Value", -2.0, "Minimum value for points to be displayed.",
+
+        x_min_value_property_ = new rviz::FloatProperty("X Min Value", -2.0,
+                                                        "Minimum value for points to be displayed.",
                                                         x_filter_property_, SLOT(updateParameters()), this);
         x_max_value_property_ = new rviz::FloatProperty("X Max Value", 2.0, "Maximum value for points to be displayed.",
                                                         x_filter_property_, SLOT(updateParameters()), this);
-        y_min_value_property_ = new rviz::FloatProperty("Y Min Value", -2.0, "Minimum value for points to be displayed.",
+        y_min_value_property_ = new rviz::FloatProperty("Y Min Value", -2.0,
+                                                        "Minimum value for points to be displayed.",
                                                         y_filter_property_, SLOT(updateParameters()), this);
         y_max_value_property_ = new rviz::FloatProperty("Y Max Value", 2.0, "Maximum value for points to be displayed.",
                                                         y_filter_property_, SLOT(updateParameters()), this);
-        z_min_value_property_ = new rviz::FloatProperty("Z Min Value", -2.0, "Minimum value for points to be displayed.",
+        z_min_value_property_ = new rviz::FloatProperty("Z Min Value", -2.0,
+                                                        "Minimum value for points to be displayed.",
                                                         z_filter_property_, SLOT(updateParameters()), this);
         z_max_value_property_ = new rviz::FloatProperty("Z Max Value", 2.0, "Maximum value for points to be displayed.",
                                                         z_filter_property_, SLOT(updateParameters()), this);
+        channel_max_value_property_ = new rviz::FloatProperty("Channel Max Value", 255.0,
+                                                              "Maximum value for points to be displayed.",
+                                                              filter_by_channel_value_property_,
+                                                              SLOT(updateParameters()), this);
+        channel_min_value_property_ = new rviz::FloatProperty("Channel Min Value", -255.0,
+                                                              "Minimum value for points to be displayed.",
+                                                              filter_by_channel_value_property_,
+                                                              SLOT(updateParameters()), this);
 
         frame_property_ = new rviz::TfFrameProperty("Frame", "world",
                                                     "The frame to which the points are filtered to relatively.",
@@ -94,7 +114,8 @@ namespace hector_rviz_plugins {
                                                           filter_property_, SLOT(updateParameters()), this);
         axes_frame_property_ = new rviz::TfFrameProperty("Axes Frame", "world",
                                                          "The frame used for the filter axes.",
-                                                         use_axes_frame_property_, nullptr, true, SLOT(updateParameters()), this);
+                                                         use_axes_frame_property_, nullptr, true,
+                                                         SLOT(updateParameters()), this);
     }
 
     PointCloudFilterDisplay::~PointCloudFilterDisplay() = default;
@@ -187,6 +208,16 @@ namespace hector_rviz_plugins {
         if (xi == -1 || yi == -1 || zi == -1) {
             return nullptr;
         }
+
+        // get active channel name
+        bool filter_by_channel_value = filter_by_channel_value_property_->getBool();
+        int32_t channel_i = rviz::findChannelIndex(cloud, channel_property_->getStdString());
+        filter_by_channel_value = filter_by_channel_value && (channel_i != -1);
+        uint32_t channel_off;
+        if (filter_by_channel_value) {
+            channel_off = cloud->fields[channel_i].offset;
+        }
+        
         const uint32_t x_off = cloud->fields[xi].offset;
         const uint32_t y_off = cloud->fields[yi].offset;
         const uint32_t z_off = cloud->fields[zi].offset;
@@ -218,13 +249,14 @@ namespace hector_rviz_plugins {
             x_filtering_ = x_filter_property_->getBool();
             y_filtering_ = y_filter_property_->getBool();
             z_filtering_ = z_filter_property_->getBool();
-            float max_radial_dist_2 = max_radial_distance_property_->getFloat() * max_radial_distance_property_->getFloat();
+            float max_radial_dist_2 =
+                    max_radial_distance_property_->getFloat() * max_radial_distance_property_->getFloat();
 
             Eigen::Vector3f relativePos(0, 0, 0);
-            if(use_axes_frame){
+            if (use_axes_frame) {
                 geometry_msgs::Transform trans = context_->getFrameManager()->getTF2BufferPtr()->lookupTransform(
                         target_frame, selected_frame_, ros::Time(0), ros::Duration(0.0)).transform;
-                relativePos = {(float)trans.translation.x, (float)trans.translation.y, (float)trans.translation.z};
+                relativePos = {(float) trans.translation.x, (float) trans.translation.y, (float) trans.translation.z};
             }
 
             //Filter points out depending on the selected axis and the min and max values set and the radial distance
@@ -232,11 +264,15 @@ namespace hector_rviz_plugins {
                 float x = *reinterpret_cast<const float *>(ptr + x_off);
                 float y = *reinterpret_cast<const float *>(ptr + y_off);
                 float z = *reinterpret_cast<const float *>(ptr + z_off);
+                float channel_value;
+                if (filter_by_channel_value) {
+                    channel_value = *reinterpret_cast<const float *>(ptr + channel_off);
+                }
 
                 // Check for NaNs. If any of x,y,z is a NaN, skip the whole point.
                 bool add_point = true;
                 if (rviz::validateFloats(x) && rviz::validateFloats(y) && rviz::validateFloats(z) && filtering_) {
-                    if(use_axes_frame){
+                    if (use_axes_frame) {
                         x -= relativePos.x();
                         y -= relativePos.y();
                         z -= relativePos.z();
@@ -250,6 +286,10 @@ namespace hector_rviz_plugins {
                     }
                     if (add_point && z_filtering_) {
                         add_point = z < z_max_value_property_->getFloat() && z > z_min_value_property_->getFloat();
+                    }
+                    if (add_point && filter_by_channel_value) {
+                        add_point = channel_value < channel_max_value_property_->getFloat() &&
+                                    channel_value > channel_min_value_property_->getFloat();
                     }
                     if (add_point && radial_filtering_) {
                         add_point = x * x + y * y + z * z < max_radial_dist_2;

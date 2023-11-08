@@ -97,6 +97,7 @@ namespace hector_rviz_plugins {
         bool x_filtering_;
         bool y_filtering_;
         bool z_filtering_;
+        bool channel_filtering_;
 
         rviz::BoolProperty *filter_property_;
         rviz::BoolProperty *radial_filter_property_;
@@ -104,6 +105,7 @@ namespace hector_rviz_plugins {
         rviz::BoolProperty *y_filter_property_;
         rviz::BoolProperty *z_filter_property_;
         rviz::BoolProperty *use_axes_frame_property_;
+        rviz::BoolProperty *filter_by_channel_value_property_;
 
         rviz::FloatProperty *max_radial_distance_property_;
         rviz::FloatProperty *x_min_value_property_;
@@ -112,6 +114,10 @@ namespace hector_rviz_plugins {
         rviz::FloatProperty *y_max_value_property_;
         rviz::FloatProperty *z_min_value_property_;
         rviz::FloatProperty *z_max_value_property_;
+        rviz::FloatProperty *channel_max_value_property_;
+        rviz::FloatProperty *channel_min_value_property_;
+        rviz::StringProperty *channel_property_;
+
         rviz::TfFrameProperty *frame_property_;
         rviz::TfFrameProperty *axes_frame_property_;
 
