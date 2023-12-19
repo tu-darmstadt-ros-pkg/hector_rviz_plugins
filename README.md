@@ -1,5 +1,5 @@
 # hector_rviz_plugins
-Collection of RViz plugins. Clone repo and make. After that the rviz plugins are available for use within rviz. To use them simply add them in rviz.
+Collection of RViz plugins. Clone package into ROS Workspace and make. After that the rviz plugins are available for use within rviz. To use them simply add them in rviz.
 ![Instructions for usage of plugins](instruction.png)
 
 ## HectorViewController
