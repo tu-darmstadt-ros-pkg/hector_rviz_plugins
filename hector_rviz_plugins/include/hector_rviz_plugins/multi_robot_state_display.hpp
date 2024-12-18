@@ -15,23 +15,24 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef HECTOR_RVIZ_PLUGINS_MULTI_ROBOT_STATE_DISPLAY_H
-#define HECTOR_RVIZ_PLUGINS_MULTI_ROBOT_STATE_DISPLAY_H
+#ifndef HECTOR_RVIZ_PLUGINS_MULTI_ROBOT_STATE_DISPLAY_HPP
+#define HECTOR_RVIZ_PLUGINS_MULTI_ROBOT_STATE_DISPLAY_HPP
 
-#include <hector_rviz_plugins_msgs/DisplayMultiRobotState.h>
-#include <rviz/display.h>
+#include <hector_rviz_plugins_msgs/msg/display_multi_robot_state.hpp>
+#include <rclcpp/subscription.hpp>
+#include <rviz_common/display.hpp>
 #include <unordered_map>
 
-namespace rviz
+namespace rviz_common::properties
 {
 class RosTopicProperty;
-}
+} // namespace rviz_common::properties
 
 namespace hector_rviz_plugins
 {
 class PrivateRobotStateDisplayHelper;
 
-class MultiRobotStateDisplay : public rviz::Display
+class MultiRobotStateDisplay : public rviz_common::Display
 {
   Q_OBJECT
 public:
@@ -50,15 +51,16 @@ public:
   void onEnableChanged() override;
 
 protected:
-  void onNewMultiRobotState( const hector_rviz_plugins_msgs::DisplayMultiRobotStateConstPtr &msg );
+  void onNewMultiRobotState(
+      const hector_rviz_plugins_msgs::msg::DisplayMultiRobotState::ConstSharedPtr &msg );
 
-  std::unordered_map<std::string, PrivateRobotStateDisplayHelper *> displays_;
-  std::unordered_map<std::string, geometry_msgs::PoseStamped> poses_;
-  hector_rviz_plugins_msgs::DisplayMultiRobotStateConstPtr last_message_;
-  ros::Subscriber sub_;
-  rviz::RosTopicProperty *topic_property_;
+  std::unordered_map<std::string, std::unique_ptr<PrivateRobotStateDisplayHelper>> displays_;
+  std::unordered_map<std::string, geometry_msgs::msg::PoseStamped> poses_;
+  hector_rviz_plugins_msgs::msg::DisplayMultiRobotState::ConstSharedPtr last_message_;
+  rclcpp::Subscription<hector_rviz_plugins_msgs::msg::DisplayMultiRobotState>::SharedPtr sub_;
+  rviz_common::properties::RosTopicProperty *topic_property_;
   bool needs_state_update_ = false;
 };
 } // namespace hector_rviz_plugins
 
-#endif // HECTOR_RVIZ_PLUGINS_MULTI_ROBOT_STATE_DISPLAY_H
+#endif // HECTOR_RVIZ_PLUGINS_MULTI_ROBOT_STATE_DISPLAY_HPP

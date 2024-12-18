@@ -1,23 +1,23 @@
-<library path="libhector_rviz_plugins">
-  <class name="hector_rviz_plugins/GraphDisplay" type="hector_rviz_plugins::GraphDisplay" base_class_type="rviz::Display">
+<library path="hector_rviz_plugins">
+  <class name="hector_rviz_plugins/GraphDisplay" type="hector_rviz_plugins::GraphDisplay" base_class_type="rviz_common::Display">
     <description>
       Displays a graph message.
     </description>
   </class>
-  <class name="hector_rviz_plugins/HectorViewController" type="hector_rviz_plugins::HectorViewController" base_class_type="rviz::ViewController">
+  <class name="hector_rviz_plugins/HectorViewController" type="hector_rviz_plugins::HectorViewController" base_class_type="rviz_common::ViewController">
     <description>
       A view controller with support for animation, movement using the arrow keys, 2D and 3D mode as well as ROS interfaces for control by external nodes.
     </description>
   </class>
-  <class name="hector_rviz_plugins/MultiRobotState" type="hector_rviz_plugins::MultiRobotStateDisplay" base_class_type="rviz::Display">
+  <class name="hector_rviz_plugins/MultiRobotState" type="hector_rviz_plugins::MultiRobotStateDisplay" base_class_type="rviz_common::Display">
     <description>
       Displays multiple robot states.
     </description>
   </class>
-  <class name="hector_rviz_plugins/PointCloudFilter" type="hector_rviz_plugins::PointCloudFilterDisplay" base_class_type="rviz::Display">
+  <class name="hector_rviz_plugins/PointCloudFilter" type="hector_rviz_plugins::PointCloudFilterDisplay" base_class_type="rviz_common::Display">
     <description>
       Displays a pointcloud but filters all points above a specified treshold around an axis.
     </description>
-    <message_type>sensor_msgs/PointCloud2</message_type>
+    <message_type>sensor_msgs/msg/PointCloud2</message_type>
   </class>
 </library>

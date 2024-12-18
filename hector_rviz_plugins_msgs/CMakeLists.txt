@@ -1,37 +1,23 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.5)
 project(hector_rviz_plugins_msgs VERSION 1.0.0)
 
-find_package(catkin REQUIRED COMPONENTS geometry_msgs message_generation moveit_msgs)
+find_package(ament_cmake REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(moveit_msgs REQUIRED)
 
-## Generate messages in the 'msg' folder
-add_message_files(
-  FILES
-    GraphNode.msg
-    Graph.msg
-    MultiRobotStateEntry.msg
-    DisplayMultiRobotState.msg
-    ViewMode.msg
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/GraphNode.msg"
+  "msg/Graph.msg"
+  "msg/MultiRobotStateEntry.msg"
+  "msg/DisplayMultiRobotState.msg"
+  "msg/ViewMode.msg"
+  "srv/MoveEye.srv"
+  "srv/MoveEyeAndFocus.srv"
+  "srv/SetViewMode.srv"
+  "srv/TrackFrame.srv"
+  DEPENDENCIES geometry_msgs moveit_msgs
 )
 
-## Generate services in the 'srv' folder
-add_service_files(
-  FILES
-  MoveEye.srv
-  MoveEyeAndFocus.srv
-  SetViewMode.srv
-  TrackFrame.srv
-)
-
-## Generate actions in the 'action' folder
-# add_action_files(
-#   FILES
-#   Action1.action
-#   Action2.action
-# )
-
-## Generate added messages and services with any dependencies listed here
-generate_messages(DEPENDENCIES geometry_msgs moveit_msgs)
-
-catkin_package(
-  CATKIN_DEPENDS geometry_msgs moveit_msgs
-)
+ament_export_dependencies(rosidl_default_runtime)
+ament_package()

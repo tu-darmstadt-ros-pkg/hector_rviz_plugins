@@ -15,18 +15,21 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef HECTOR_RVIZ_PLUGINS_CAMERA_CONTROLLER_H
-#define HECTOR_RVIZ_PLUGINS_CAMERA_CONTROLLER_H
+#ifndef HECTOR_RVIZ_PLUGINS_CAMERA_CONTROLLER_HPP
+#define HECTOR_RVIZ_PLUGINS_CAMERA_CONTROLLER_HPP
 
-#include <rviz/display_context.h>
+#include "../logging.hpp"
+#include <rviz_common/display_context.hpp>
 
 namespace hector_rviz_plugins
 {
 
 class CameraAnimator
 {
+  using clock = std::chrono::steady_clock;
+
 public:
-  explicit CameraAnimator( rviz::DisplayContext *context ) : context_( context ) { }
+  explicit CameraAnimator( rviz_common::DisplayContext *context ) : context_( context ) { }
 
   void animate( const Ogre::Vector3 &eye_start, const Ogre::Vector3 &eye_goal,
                 const Ogre::Vector3 &focus_start, const Ogre::Vector3 &focus_goal )
@@ -45,7 +48,7 @@ public:
       clearTrackingOffsets();
     }
 
-    animation_start_ = ros::WallTime::now();
+    animation_start_ = clock::now();
 
     in_animation_ = true;
   }
@@ -70,8 +73,8 @@ public:
   {
     Ogre::Vector3 translation;
     Ogre::Quaternion rotation;
-    if ( !getTransformOrLogError( context_->getFrameManager(), tracked_frame_, ros::Time(),
-                                  translation, rotation ) ) {
+    if ( !getTransformOrLogError( context_->getFrameManager(), tracked_frame_, translation,
+                                  rotation ) ) {
       in_animation_ = false;
       return false;
     }
@@ -86,8 +89,8 @@ public:
   {
     Ogre::Vector3 translation;
     Ogre::Quaternion rotation;
-    if ( !getTransformOrLogError( context_->getFrameManager(), tracked_frame_, ros::Time(),
-                                  translation, rotation ) ) {
+    if ( !getTransformOrLogError( context_->getFrameManager(), tracked_frame_, translation,
+                                  rotation ) ) {
       in_animation_ = false;
       return false;
     }
@@ -101,8 +104,8 @@ public:
     tracked_frame_remaining_orientation_difference_ = Ogre::Quaternion::IDENTITY;
     Ogre::Vector3 current_position;
     Ogre::Quaternion current_orientation;
-    if ( !getTransformOrLogError( context_->getFrameManager(), tracked_frame_, ros::Time(),
-                                  current_position, current_orientation ) )
+    if ( !getTransformOrLogError( context_->getFrameManager(), tracked_frame_, current_position,
+                                  current_orientation ) )
       return;
     tracked_frame_last_position_ = current_position;
     tracked_frame_last_orientation_ = current_orientation;
@@ -118,7 +121,7 @@ public:
     is_frame_tracked_ = !name.empty();
     tracked_frame_ = name;
     if ( is_frame_tracked_ ) {
-      context_->getFrameManager()->getTransform( name, ros::Time(), tracked_frame_last_position_,
+      context_->getFrameManager()->getTransform( name, tracked_frame_last_position_,
                                                  tracked_frame_last_orientation_ );
       clearTrackingOffsets();
       // Transform animation back to new tracked frame
@@ -139,17 +142,16 @@ public:
 
   void setPGain( float value ) { p_gain_ = value; }
 
-  static bool getTransformOrLogError( rviz::FrameManager *frame_manager, const std::string &frame,
-                                      const ros::Time &time, Ogre::Vector3 &pos_out,
+  static bool getTransformOrLogError( rviz_common::FrameManagerIface *frame_manager,
+                                      const std::string &frame, Ogre::Vector3 &pos_out,
                                       Ogre::Quaternion &q_out )
   {
-    if ( !frame_manager->getTransform( frame, ros::Time(), pos_out, q_out ) ) {
+    if ( !frame_manager->getTransform( frame, pos_out, q_out ) ) {
       std::string error;
-      if ( !frame_manager->transformHasProblems( frame, ros::Time(), error ) ) {
+      if ( !frame_manager->transformHasProblems( frame, error ) ) {
         error = "Unknown";
       }
-      ROS_WARN_NAMED( "HectorViewController",
-                      "Could not get transform to tracked frame! Reason: %s", error.c_str() );
+      HECTOR_RVIZ_LOG_WARN( "Could not get transform to tracked frame! Reason: %s", error.c_str() );
       return false;
     }
     return true;
@@ -162,8 +164,11 @@ public:
 
     bool in_animation = in_animation_;
     if ( in_animation_ ) {
-      ros::WallDuration elapsed = ros::WallTime::now() - animation_start_;
-      float completed_percent = (float)elapsed.toSec() / animation_duration_;
+      clock::duration elapsed = clock::now() - animation_start_;
+      using namespace std::chrono;
+      double completed_percent =
+          ( static_cast<double>( duration_cast<milliseconds>( elapsed ).count() ) / 1000.0 ) /
+          animation_duration_;
       if ( completed_percent < 1 ) {
         // The completed percent is adjusted to make a smooth transition
         // using this sigmoid function: https://www.wolframalpha.com/input/?i=y%3D(1%2F(1%2Be%5E(-12(x-0.5)))),+from+0+to+1
@@ -184,8 +189,8 @@ public:
 
     Ogre::Vector3 current_position;
     Ogre::Quaternion current_orientation;
-    if ( !getTransformOrLogError( context_->getFrameManager(), tracked_frame_, ros::Time(),
-                                  current_position, current_orientation ) )
+    if ( !getTransformOrLogError( context_->getFrameManager(), tracked_frame_, current_position,
+                                  current_orientation ) )
       return true;
 
     if ( in_animation ) {
@@ -237,7 +242,7 @@ private:
   Ogre::Vector3 animation_eye_goal_;
   Ogre::Vector3 animation_focus_start_;
   Ogre::Vector3 animation_focus_goal_;
-  ros::WallTime animation_start_;
+  clock::time_point animation_start_;
   float animation_duration_ = 0.4;
   bool in_animation_ = false;
 
@@ -249,8 +254,8 @@ private:
   float p_gain_ = 3;
   bool is_frame_tracked_ = false;
 
-  rviz::DisplayContext *context_;
+  rviz_common::DisplayContext *context_;
 };
 } // namespace hector_rviz_plugins
 
-#endif // HECTOR_RVIZ_PLUGINS_CAMERA_CONTROLLER_H
+#endif // HECTOR_RVIZ_PLUGINS_CAMERA_CONTROLLER_HPP

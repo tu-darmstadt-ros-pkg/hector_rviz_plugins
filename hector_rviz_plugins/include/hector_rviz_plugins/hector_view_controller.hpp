@@ -15,32 +15,23 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef HECTOR_RVIZ_PLUGINS_HECTOR_VIEW_CONTROLLER_H
-#define HECTOR_RVIZ_PLUGINS_HECTOR_VIEW_CONTROLLER_H
+#ifndef HECTOR_RVIZ_PLUGINS_HECTOR_VIEW_CONTROLLER_HPP
+#define HECTOR_RVIZ_PLUGINS_HECTOR_VIEW_CONTROLLER_HPP
 
-#include <rviz/view_controller.h>
+#include <rviz_common/view_controller.hpp>
 
-#include <OgreQuaternion.h>
-#include <OgreVector3.h>
 
-#include <ros/duration.h>
-#include <ros/node_handle.h>
-#include <ros/service_server.h>
-
-#include <hector_rviz_plugins_msgs/SetViewMode.h>
-
-namespace rviz
+namespace rviz_rendering
 {
-class BoolProperty;
-
-class FloatProperty;
-
 class Shape;
+} // namespace rviz_rendering
 
+namespace rviz_common::properties
+{
 class TfFrameProperty;
 
 class VectorProperty;
-} // namespace rviz
+} // namespace rviz_common::properties
 
 namespace hector_rviz_plugins
 {
@@ -52,11 +43,11 @@ namespace view_modes
 enum ViewMode { Mode3D = 0, Mode2D = 1 };
 }
 using ViewMode = view_modes::ViewMode;
+class ViewControllerRosInterface;
 
-class HectorViewController : public rviz::ViewController
+class HectorViewController : public rviz_common::ViewController
 {
   Q_OBJECT
-
 public:
   HectorViewController();
 
@@ -64,15 +55,15 @@ public:
 
   void lookAt( const Ogre::Vector3 &point ) override;
 
-  void mimic( rviz::ViewController *source_view ) override;
+  void mimic( rviz_common::ViewController *source_view ) override;
 
   void onInitialize() override;
 
   void reset() override;
 
-  void handleMouseEvent( rviz::ViewportMouseEvent &evt ) override;
+  void handleMouseEvent( rviz_common::ViewportMouseEvent &evt ) override;
 
-  void handleKeyEvent( QKeyEvent *event, rviz::RenderPanel *panel ) override;
+  void handleKeyEvent( QKeyEvent *event, rviz_common::RenderPanel *panel ) override;
 
   bool eventFilter( QObject *obj, QEvent *event ) override;
 
@@ -94,6 +85,10 @@ public:
   void setMode( ViewMode value, bool animate_transition = true );
 
   void trackFrame( const std::string &name );
+
+  bool isTrackingFrame() const;
+
+  std::string trackedFrame() const;
 
   void stopTracking();
 
@@ -126,23 +121,16 @@ Q_SIGNALS:
   void trackingChanged( bool tracking, const std::string &frame );
 
 protected:
-  void publishViewMode();
-
-  void publishTrackedFrame();
 
   virtual void connectPositionProperties();
 
   virtual void disconnectPositionProperties();
 
-  virtual void handleMouseEvent3D( rviz::ViewportMouseEvent &evt );
+  virtual void handleMouseEvent3D( rviz_common::ViewportMouseEvent &evt );
 
-  virtual void handleMouseEvent2D( rviz::ViewportMouseEvent &evt );
+  virtual void handleMouseEvent2D( rviz_common::ViewportMouseEvent &evt );
 
   void update( float dt, float ros_dt ) override;
-
-  virtual bool updateCameraProperties( float dt );
-
-  virtual void updateCamera();
 
   virtual void updateDistance();
 
@@ -150,43 +138,36 @@ protected:
 
   virtual void setPropertiesFromCamera( const Ogre::Camera *camera );
 
-  rviz::RenderPanel *render_panel_ = nullptr;
+  rviz_common::RenderPanel *render_panel_ = nullptr;
   Ogre::SceneNode *target_scene_node_ = nullptr;
-  rviz::Shape *focal_shape_ = nullptr;
+  std::unique_ptr<rviz_rendering::Shape> focal_shape_;
 
-  /* ROS Interface */
-  ros::NodeHandle update_nh_;
-  ros::Publisher tracked_frame_pub_;
-  ros::Publisher view_mode_pub_;
-  ros::ServiceServer move_eye_service_;
-  ros::ServiceServer move_eye_and_focus_service_;
-  ros::ServiceServer set_view_mode_service_;
-  ros::ServiceServer track_frame_service_;
+  std::shared_ptr<ViewControllerRosInterface> ros_interface_;
 
   /* Animation & Frame Tracking */
   std::unique_ptr<CameraAnimator> camera_animator_;
 
   /* RViz Properties */
   /* 3D */
-  rviz::FloatProperty *distance_property_ = nullptr;
-  rviz::VectorProperty *focus_point_property_ = nullptr;
-  rviz::VectorProperty *eye_point_property_ = nullptr;
-  rviz::VectorProperty *up_vector_property_ = nullptr;
-  rviz::VectorProperty *camera3d_offset_ = nullptr;
+  rviz_common::properties::FloatProperty *distance_property_ = nullptr;
+  rviz_common::properties::VectorProperty *focus_point_property_ = nullptr;
+  rviz_common::properties::VectorProperty *eye_point_property_ = nullptr;
+  rviz_common::properties::VectorProperty *up_vector_property_ = nullptr;
+  rviz_common::properties::VectorProperty *camera3d_offset_ = nullptr;
   /* 2D */
-  rviz::FloatProperty *angle_property_ = nullptr;
+  rviz_common::properties::FloatProperty *angle_property_ = nullptr;
 
-  rviz::FloatProperty *animation_duration_property_ = nullptr;
-  rviz::TfFrameProperty *tracked_frame_property_ = nullptr;
-  rviz::FloatProperty *tracked_frame_p_gain_property_ = nullptr;
+  rviz_common::properties::FloatProperty *animation_duration_property_ = nullptr;
+  rviz_common::properties::TfFrameProperty *tracked_frame_property_ = nullptr;
+  rviz_common::properties::FloatProperty *tracked_frame_p_gain_property_ = nullptr;
 
-  rviz::BoolProperty *mode2d_property_ = nullptr;
+  rviz_common::properties::BoolProperty *mode2d_property_ = nullptr;
 
-  rviz::BoolProperty *keyboard_navigation_property_ = nullptr;
-  rviz::FloatProperty *max_movement_property_ = nullptr;
+  rviz_common::properties::BoolProperty *keyboard_navigation_property_ = nullptr;
+  rviz_common::properties::FloatProperty *max_movement_property_ = nullptr;
 
-  rviz::BoolProperty *enable_topics_property_ = nullptr;
-  rviz::BoolProperty *enable_services_property_ = nullptr;
+  rviz_common::properties::BoolProperty *enable_topics_property_ = nullptr;
+  rviz_common::properties::BoolProperty *enable_services_property_ = nullptr;
 
   /* Movement */
   int key_x_direction_ = 0;
@@ -200,4 +181,4 @@ protected:
   bool in_mode_transition_ = false;
 };
 } // namespace hector_rviz_plugins
-#endif // HECTOR_RVIZ_PLUGINS_HECTOR_VIEW_CONTROLLER_H
+#endif // HECTOR_RVIZ_PLUGINS_HECTOR_VIEW_CONTROLLER_HPP

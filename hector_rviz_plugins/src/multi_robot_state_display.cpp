@@ -15,12 +15,14 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "hector_rviz_plugins/multi_robot_state_display.h"
+#include "hector_rviz_plugins/multi_robot_state_display.hpp"
+
+#include "./logging.hpp"
 
 #include <moveit/robot_state_rviz_plugin/robot_state_display.h>
-#include <rviz/display_context.h>
-#include <rviz/frame_manager.h>
-#include <rviz/properties/ros_topic_property.h>
+#include <rviz_common/display_context.hpp>
+#include <rviz_common/frame_manager_iface.hpp>
+#include <rviz_common/properties/ros_topic_property.hpp>
 
 namespace hector_rviz_plugins
 {
@@ -38,7 +40,7 @@ public:
     robot_state_topic_property_->blockSignals( false );
   }
 
-  void forwardNewRobotState( const moveit_msgs::DisplayRobotState::ConstPtr &state )
+  void forwardNewRobotState( const moveit_msgs::msg::DisplayRobotState::ConstSharedPtr &state )
   {
     newRobotStateCallback( state );
   }
@@ -64,7 +66,7 @@ protected:
 
 MultiRobotStateDisplay::MultiRobotStateDisplay()
 {
-  topic_property_ = new rviz::RosTopicProperty(
+  topic_property_ = new rviz_common::properties::RosTopicProperty(
       "topic", "/display_multi_robot_state", "hector_rviz_plugins_msgs/DisplayMultiRobotState",
       "The to listen for hector_rviz_plugins_msgs/DisplayMultiRobotState message.", this,
       SLOT( onTopicChanged() ) );
@@ -80,19 +82,19 @@ void MultiRobotStateDisplay::update( float wall_dt, float ros_dt )
   std::string default_frame = last_message_->header.frame_id;
   if ( default_frame.empty() )
     default_frame = fixed_frame_.toStdString();
-  for ( auto &kvp : displays_ ) {
-    if ( kvp.second->isEnabled() )
-      kvp.second->update( wall_dt, ros_dt );
-    const geometry_msgs::PoseStamped &pose = poses_.find( kvp.first )->second;
-    std_msgs::Header header = pose.header;
+  for ( const auto &[name, display] : displays_ ) {
+    if ( display->isEnabled() )
+      display->update( wall_dt, ros_dt );
+    const geometry_msgs::msg::PoseStamped &pose = poses_.find( name )->second;
+    std_msgs::msg::Header header = pose.header;
     if ( header.frame_id.empty() )
       header.frame_id = default_frame;
-    if ( header.stamp.isZero() )
+    if ( header.stamp.sec == 0 && header.stamp.nanosec == 0 )
       header.stamp = last_message_->header.stamp;
     Ogre::Vector3 position;
     Ogre::Quaternion orientation;
     context_->getFrameManager()->transform( header, pose.pose, position, orientation );
-    kvp.second->setPositionAndOrientation( position, orientation );
+    display->setPositionAndOrientation( position, orientation );
   }
 
   // State update is done after update method calls because in the first update the state is reset
@@ -100,43 +102,44 @@ void MultiRobotStateDisplay::update( float wall_dt, float ros_dt )
     needs_state_update_ = false;
     for ( const auto &robot : last_message_->robots ) {
       if ( robot.id.empty() ) {
-        ROS_ERROR_ONCE( "No id provided for robot state and the state was ignored! This message is "
-                        "printed once!" );
+        HECTOR_RVIZ_LOG_ERROR_ONCE( "No id provided for robot state and the state was ignored! "
+                                    "This message is printed once!" );
         continue;
       }
       auto it = displays_.find( robot.id );
       if ( it->second->isEnabled() )
         it->second->forwardNewRobotState(
-            boost::make_shared<const moveit_msgs::DisplayRobotState>( robot.robot_state ) );
+            std::make_shared<const moveit_msgs::msg::DisplayRobotState>( robot.robot_state ) );
     }
   }
 }
 
 void MultiRobotStateDisplay::onNewMultiRobotState(
-    const hector_rviz_plugins_msgs::DisplayMultiRobotStateConstPtr &msg )
+    const hector_rviz_plugins_msgs::msg::DisplayMultiRobotState::ConstSharedPtr &msg )
 {
   last_message_ = msg;
   // Collect the robot ids to check if there are displays that can be removed
-  std::set<std::string> keys;
-  std::for_each( displays_.begin(), displays_.end(),
-                 [&keys]( const std::pair<std::string, PrivateRobotStateDisplayHelper *> &s ) {
-                   keys.insert( s.first );
-                 } );
+  std::set<std::string, std::less<>> keys;
+  std::for_each(
+      displays_.begin(), displays_.end(),
+      [&keys]( std::pair<const std::string, std::unique_ptr<PrivateRobotStateDisplayHelper>> &s ) {
+        keys.insert( s.first );
+      } );
   for ( const auto &robot : msg->robots ) {
     if ( robot.id.empty() ) {
-      ROS_ERROR_ONCE( "No id provided for robot state and the state was ignored! This message is "
-                      "printed once!" );
+      HECTOR_RVIZ_LOG_ERROR_ONCE( "No id provided for robot state and the state was ignored! "
+                                  "This message is printed once!" );
       continue;
     }
     auto it = displays_.find( robot.id );
     if ( it == displays_.end() ) {
-      it = displays_.emplace( robot.id, new PrivateRobotStateDisplayHelper() ).first;
+      it = displays_.try_emplace( robot.id, new PrivateRobotStateDisplayHelper() ).first;
       it->second->initialize( context_ );
       it->second->setName( QString::fromStdString( robot.id ) );
       it->second->setBool( getBool() );
-      connect( it->second, &PrivateRobotStateDisplayHelper::changed, this,
+      connect( it->second.get(), &PrivateRobotStateDisplayHelper::changed, this,
                &MultiRobotStateDisplay::onSubdisplayEnableChanged );
-      addChild( it->second );
+      addChild( it->second.get() );
       poses_.emplace( robot.id, robot.pose );
     }
     poses_.find( robot.id )->second = robot.pose;
@@ -147,8 +150,7 @@ void MultiRobotStateDisplay::onNewMultiRobotState(
     auto it = displays_.find( key );
     if ( it == displays_.end() )
       continue;
-    takeChild( it->second );
-    delete it->second;
+    takeChild( it->second.get() );
     displays_.erase( it );
     poses_.erase( key );
   }
@@ -157,19 +159,22 @@ void MultiRobotStateDisplay::onNewMultiRobotState(
 
 void MultiRobotStateDisplay::onTopicChanged()
 {
-  sub_.shutdown();
-  sub_ = update_nh_.subscribe<hector_rviz_plugins_msgs::DisplayMultiRobotState>(
-      topic_property_->getTopicStd(), 10, &MultiRobotStateDisplay::onNewMultiRobotState, this );
+  sub_.reset();
+  auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
+  sub_ = node->create_subscription<hector_rviz_plugins_msgs::msg::DisplayMultiRobotState>(
+      topic_property_->getTopicStd(), rclcpp::QoS( 1 ),
+      [this]( const hector_rviz_plugins_msgs::msg::DisplayMultiRobotState::ConstSharedPtr msg ) {
+        onNewMultiRobotState( msg );
+      } );
 }
 
 void MultiRobotStateDisplay::onSubdisplayEnableChanged() { needs_state_update_ = true; }
 
 void MultiRobotStateDisplay::onEnableChanged()
 {
-  for ( auto &kvp : displays_ ) { kvp.second->setBool( getBool() ); }
+  for ( auto &[_, display] : displays_ ) { display->setBool( getBool() ); }
 }
 } // namespace hector_rviz_plugins
 
-#include <pluginlib/class_list_macros.h>
-
-PLUGINLIB_EXPORT_CLASS( hector_rviz_plugins::MultiRobotStateDisplay, rviz::Display )
+#include <pluginlib/class_list_macros.hpp>
+PLUGINLIB_EXPORT_CLASS( hector_rviz_plugins::MultiRobotStateDisplay, rviz_common::Display )
