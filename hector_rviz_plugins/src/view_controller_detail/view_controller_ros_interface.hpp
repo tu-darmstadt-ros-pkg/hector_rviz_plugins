@@ -33,10 +33,14 @@ public:
 
   void enableTopics()
   {
-    tracked_frame_pub_ = node_->create_publisher<std_msgs::msg::String>(
-        "hector_view_controller/tracked_frame", rclcpp::QoS( 1 ).transient_local() );
-    view_mode_pub_ = node_->create_publisher<hector_rviz_plugins_msgs::msg::ViewMode>(
-        "hector_view_controller/view_mode", rclcpp::QoS( 1 ).transient_local() );
+    if ( tracked_frame_pub_ == nullptr ) {
+      tracked_frame_pub_ = node_->create_publisher<std_msgs::msg::String>(
+          "~/hector_view_controller/tracked_frame", rclcpp::QoS( 1 ).transient_local() );
+    }
+    if ( view_mode_pub_ == nullptr ) {
+      view_mode_pub_ = node_->create_publisher<hector_rviz_plugins_msgs::msg::ViewMode>(
+          "~/hector_view_controller/view_mode", rclcpp::QoS( 1 ).transient_local() );
+    }
     publishTrackedFrame();
     publishViewMode();
   }
@@ -52,9 +56,9 @@ public:
   void enableServices()
   {
     using namespace hector_rviz_plugins_msgs::srv;
-    if ( !move_eye_service_ ) {
+    if ( move_eye_service_ == nullptr ) {
       move_eye_service_ = node_->create_service<MoveEye>(
-          "hector_view_controller/move_eye",
+          "~/hector_view_controller/move_eye",
           [this]( const MoveEye::Request::SharedPtr &req, const MoveEye::Response::SharedPtr & ) {
             if ( req->header.frame_id.empty() )
               req->header.frame_id = frame_manager_->getFixedFrame();
@@ -68,9 +72,9 @@ public:
                                                  req->switch_to_3d_mode );
           } );
     }
-    if ( !move_eye_and_focus_service_ ) {
+    if ( move_eye_and_focus_service_ == nullptr ) {
       move_eye_and_focus_service_ = node_->create_service<MoveEyeAndFocus>(
-          "hector_view_controller/move_eye_and_focus",
+          "~/hector_view_controller/move_eye_and_focus",
           [this]( const MoveEyeAndFocus::Request::SharedPtr &req,
                   const MoveEyeAndFocus::Response::SharedPtr & ) {
             if ( req->header.frame_id.empty() )
@@ -89,10 +93,11 @@ public:
             return true;
           } );
     }
-    if ( !set_view_mode_service_ ) {
+    if ( set_view_mode_service_ == nullptr ) {
       set_view_mode_service_ = node_->create_service<SetViewMode>(
-          "hector_view_controller/set_view_mode", [this]( const SetViewMode::Request::SharedPtr &req,
-                                                          const SetViewMode::Response::SharedPtr & ) {
+          "~/hector_view_controller/set_view_mode",
+          [this]( const SetViewMode::Request::SharedPtr &req,
+                  const SetViewMode::Response::SharedPtr & ) {
             view_controller_.setMode( req->mode.mode == hector_rviz_plugins_msgs::msg::ViewMode::MODE_3D
                                           ? view_modes::Mode3D
                                           : view_modes::Mode2D,
@@ -100,9 +105,9 @@ public:
             return true;
           } );
     }
-    if ( !track_frame_service_ ) {
+    if ( track_frame_service_ == nullptr ) {
       track_frame_service_ =
-          node_->create_service<TrackFrame>( "hector_view_controller/set_tracked_frame",
+          node_->create_service<TrackFrame>( "~/hector_view_controller/set_tracked_frame",
                                              [this]( const TrackFrame::Request::SharedPtr &req,
                                                      const TrackFrame::Response::SharedPtr & ) {
                                                view_controller_.trackFrame( req->frame );
@@ -113,7 +118,7 @@ public:
 
   void publishViewMode()
   {
-    if ( !view_mode_pub_ )
+    if ( view_mode_pub_ == nullptr )
       return;
     hector_rviz_plugins_msgs::msg::ViewMode view_mode_msg;
     view_mode_msg.mode = view_controller_.mode() == view_modes::Mode2D
@@ -124,7 +129,7 @@ public:
 
   void publishTrackedFrame()
   {
-    if ( !tracked_frame_pub_ )
+    if ( tracked_frame_pub_ == nullptr )
       return;
     std_msgs::msg::String tracked_frame_msg;
     tracked_frame_msg.data =

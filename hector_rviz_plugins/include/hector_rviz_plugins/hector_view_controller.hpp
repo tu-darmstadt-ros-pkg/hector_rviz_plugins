@@ -20,7 +20,6 @@
 
 #include <rviz_common/view_controller.hpp>
 
-
 namespace rviz_rendering
 {
 class Shape;
@@ -121,22 +120,25 @@ Q_SIGNALS:
   void trackingChanged( bool tracking, const std::string &frame );
 
 protected:
-
-  virtual void connectPositionProperties();
-
-  virtual void disconnectPositionProperties();
-
   virtual void handleMouseEvent3D( rviz_common::ViewportMouseEvent &evt );
 
   virtual void handleMouseEvent2D( rviz_common::ViewportMouseEvent &evt );
 
   void update( float dt, float ros_dt ) override;
 
-  virtual void updateDistance();
+  void updateMovement( float dt );
+
+  void updateCamera( float dt );
+
+  void setEyePoint( const Ogre::Vector3 &eye );
+
+  void setFocusPoint( const Ogre::Vector3 &focus );
+
+  void updateDistance();
+
+  void setDistance( float distance );
 
   virtual void updateOrientation( float delta_yaw, float delta_pitch, float delta_roll );
-
-  virtual void setPropertiesFromCamera( const Ogre::Camera *camera );
 
   rviz_common::RenderPanel *render_panel_ = nullptr;
   Ogre::SceneNode *target_scene_node_ = nullptr;
@@ -153,7 +155,6 @@ protected:
   rviz_common::properties::VectorProperty *focus_point_property_ = nullptr;
   rviz_common::properties::VectorProperty *eye_point_property_ = nullptr;
   rviz_common::properties::VectorProperty *up_vector_property_ = nullptr;
-  rviz_common::properties::VectorProperty *camera3d_offset_ = nullptr;
   /* 2D */
   rviz_common::properties::FloatProperty *angle_property_ = nullptr;
 

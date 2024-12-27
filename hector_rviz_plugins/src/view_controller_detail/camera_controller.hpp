@@ -166,13 +166,13 @@ public:
     if ( in_animation_ ) {
       clock::duration elapsed = clock::now() - animation_start_;
       using namespace std::chrono;
-      double completed_percent =
-          ( static_cast<double>( duration_cast<milliseconds>( elapsed ).count() ) / 1000.0 ) /
+      float completed_percent =
+          ( static_cast<float>( duration_cast<milliseconds>( elapsed ).count() ) / 1000.0f ) /
           animation_duration_;
       if ( completed_percent < 1 ) {
         // The completed percent is adjusted to make a smooth transition
         // using this sigmoid function: https://www.wolframalpha.com/input/?i=y%3D(1%2F(1%2Be%5E(-12(x-0.5)))),+from+0+to+1
-        completed_percent = 1.f / ( 1 + expf( -12.f * ( completed_percent - 0.5f ) ) );
+        completed_percent = 1.f / ( 1 + std::exp( -12.f * ( completed_percent - 0.5f ) ) );
         Ogre::Vector3 animation_focus_goal_offset = animation_focus_goal_ - animation_focus_start_;
         Ogre::Vector3 animation_eye_goal_offset = animation_eye_goal_ - animation_eye_start_;
         focus = animation_focus_start_ + completed_percent * animation_focus_goal_offset;

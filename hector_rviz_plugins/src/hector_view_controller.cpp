@@ -59,7 +59,7 @@ Ogre::SceneNode *getCameraParent( Ogre::Camera *camera )
 {
   auto result = camera->getParentSceneNode();
   if ( result == nullptr ) {
-    throw std::logic_error( "Camera has no parent scene node." );
+    throw std::runtime_error( "Camera has no parent scene node." );
   }
   return result;
 }
@@ -68,7 +68,7 @@ const Ogre::SceneNode *getCameraParent( const Ogre::Camera *camera )
 {
   auto result = camera->getParentSceneNode();
   if ( result == nullptr ) {
-    throw std::logic_error( "Camera has no parent scene node." );
+    throw std::runtime_error( "Camera has no parent scene node." );
   }
   return result;
 }
@@ -83,6 +83,18 @@ void setCameraPosition( Ogre::Camera *camera, const Ogre::Vector3 &position )
 {
   auto parent = getCameraParent( camera );
   parent->setPosition( position );
+}
+
+void setCameraFixedYawAxis( Ogre::Camera *camera, const Ogre::Vector3 &fixed_axis )
+{
+  auto parent = getCameraParent( camera );
+  parent->setFixedYawAxis( true, fixed_axis );
+}
+
+void setCameraDirection( Ogre::Camera *camera, const Ogre::Vector3 &direction )
+{
+  auto parent = getCameraParent( camera );
+  parent->setDirection( direction, Ogre::Node::TS_PARENT );
 }
 
 Ogre::Quaternion getCameraOrientation( const Ogre::Camera *camera )
@@ -104,16 +116,13 @@ HectorViewController::HectorViewController()
   up_vector_property_ = new VectorProperty( "Up", Ogre::Vector3::UNIT_Z,
                                             "The vector marking the up direction.", this );
   focus_point_property_ =
-      new VectorProperty( "Focus", Ogre::Vector3::ZERO, "The focus point position.", this );
-  eye_point_property_ =
-      new VectorProperty( "Eye", Ogre::Vector3( 4, 0, 3 ), "The camera position.", this );
-  distance_property_ =
-      new FloatProperty( "Distance", 5.0, "The distance from camera to focus point.", this );
-  distance_property_->setMin( 0.01 );
-  camera3d_offset_ = new VectorProperty(
-      "Eye 3D Offset", Ogre::Vector3( 4, 0, 3 ),
-      "The offset of the camera to the focal point when switching back to 3D mode.", this );
-  camera3d_offset_->setHidden( true );
+      new VectorProperty( "Focus", Ogre::Vector3::ZERO, "The focus point position.", this,
+                          SLOT( onFocusPointPropertyChanged() ), this );
+  eye_point_property_ = new VectorProperty( "Eye", Ogre::Vector3( 4, 0, 3 ), "The camera position.",
+                                            this, SLOT( onEyePropertyChanged() ), this );
+  distance_property_ = new FloatProperty( "Distance", 5.0, "The distance from camera to focus point.",
+                                          this, SLOT( onDistancePropertyChanged() ), this );
+  distance_property_->setMin( 0.01f );
   angle_property_ = new FloatProperty( "Angle", 0, "", this );
 
   animation_duration_property_ = new FloatProperty(
@@ -153,18 +162,28 @@ void HectorViewController::lookAt( const Ogre::Vector3 &point )
 void HectorViewController::mimic( rviz_common::ViewController *source_view )
 {
   rviz_common::ViewController::mimic( source_view );
-  if ( source_view->getFocalPointStatus().exists_ ) {
-    focus_point_property_->setVector( source_view->getFocalPointStatus().value_ );
+  if ( source_view->getClassId() == "rviz_default_plugins/TopDownOrtho" ) {
+    setMode( view_modes::Mode2D, false );
+    if ( source_view->getFocalPointStatus().exists_ ) {
+      setFocusPoint( source_view->getFocalPointStatus().value_ );
+    } else {
+      Ogre::Vector3 pos = getCameraPosition( source_view->getCamera() );
+      pos.z = 0;
+      setFocusPoint( pos );
+    }
   } else {
-    // if the previous view does not have a focal point and is not the same as this, the camera is
-    // placed at (x, y, ORTHO_VIEW_CONTROLLER_CAMERA_Z), where x and y are first two coordinates of
-    // the old camera position.
-    auto source_camera_parent = getCameraParent( source_view->getCamera() );
-    focus_point_property_->setVector( source_camera_parent->getPosition() );
+    setEyePoint( getCameraPosition( source_view->getCamera() ) );
+    if ( source_view->getFocalPointStatus().exists_ ) {
+      setFocusPoint( source_view->getFocalPointStatus().value_ );
+    } else {
+      // if the previous view does not have a focal point, we determine it from the orientation and
+      // use a fixed distance.
+      setFocusPoint( eye_point_property_->getVector() +
+                     getCameraOrientation( source_view->getCamera() ) * Ogre::Vector3 ::UNIT_Z * 3 );
+    }
+    setCameraFixedYawAxis( camera_, Ogre::Vector3::UNIT_Z );
+    updateDistance();
   }
-  setMode( source_view->getClassId() == "rviz_default_plugins/TopDownOrtho" ? view_modes::Mode2D
-                                                                            : view_modes::Mode3D,
-           false );
 }
 
 bool HectorViewController::isTrackingFrame() const { return camera_animator_->isFrameTracked(); }
@@ -188,9 +207,9 @@ void HectorViewController::onInitialize()
       "The P-Gain used to follow the tracked frame. This parameter is scaled by delta t.", this,
       SLOT( onPGainChanged() ), this );
 
+  camera_->setCustomProjectionMatrix( false, Ogre::Matrix4::IDENTITY );
   camera_->setProjectionType( Ogre::PT_PERSPECTIVE );
   getCameraParent( camera_ )->setFixedYawAxis( true, Ogre::Vector3::UNIT_Z );
-  connectPositionProperties();
 
   render_panel_ = context_->getViewManager()->getRenderPanel();
   max_movement_property_->setHidden( !keyboard_navigation_property_->getBool() );
@@ -199,6 +218,7 @@ void HectorViewController::onInitialize()
   }
 
   target_scene_node_ = context_->getSceneManager()->getRootSceneNode()->createChildSceneNode();
+  camera_->detachFromParent();
   target_scene_node_->attachObject( camera_ );
   focal_shape_ = std::make_unique<rviz_rendering::Shape>(
       rviz_rendering::Shape::Sphere, context_->getSceneManager(), target_scene_node_ );
@@ -215,12 +235,13 @@ void HectorViewController::reset()
   stopTracking();
   cancelAnimation();
   mode2d_property_->setBool( false );
-  disconnectPositionProperties();
-  focus_point_property_->setVector( Ogre::Vector3( 0, 0, 0 ) );
-  eye_point_property_->setVector( Ogre::Vector3( 4, 0, 3 ) );
+  setFocusPoint( Ogre::Vector3::ZERO );
+  setEyePoint( Ogre::Vector3( 4, 0, 3 ) );
+
+  setFocusPoint( Ogre::Vector3::ZERO );
+  setEyePoint( Ogre::Vector3( 4, 0, 3 ) );
   up_vector_property_->setVector( Ogre::Vector3::UNIT_Z );
   updateDistance();
-  connectPositionProperties();
 }
 
 void HectorViewController::onEnableTopicsChanged()
@@ -238,15 +259,6 @@ void HectorViewController::onEnableServicesChanged()
     ros_interface_->enableServices();
   } else {
     ros_interface_->disableServices();
-  }
-}
-
-void HectorViewController::handleMouseEvent( rviz_common::ViewportMouseEvent &evt )
-{
-  if ( mode() == view_modes::Mode3D ) {
-    handleMouseEvent3D( evt );
-  } else {
-    handleMouseEvent2D( evt );
   }
 }
 
@@ -278,6 +290,8 @@ bool HectorViewController::eventFilter( QObject *, QEvent *event )
     case Qt::Key_Down:
       key_y_direction_ = move ? -1 : 0;
       break;
+    default:
+      break;
     }
   }
   return false;
@@ -289,10 +303,8 @@ void HectorViewController::moveOnXYPlaneBy( float dx, float dy )
   cancelAnimation();
   Ogre::Vector3 update( dx, dy, 0 );
 
-  disconnectPositionProperties();
   eye_point_property_->setVector( eye_point_property_->getVector() + update );
   focus_point_property_->setVector( focus_point_property_->getVector() + update );
-  connectPositionProperties();
   context_->queueRender();
 }
 
@@ -304,11 +316,7 @@ void HectorViewController::moveEyeWithFocusTo( const Ogre::Vector3 &eye, bool st
       stop_tracking, animate, switch_to_3d_mode );
 }
 
-void HectorViewController::zoom( float ddistance )
-{
-  distance_property_->add( -ddistance );
-  context_->queueRender();
-}
+void HectorViewController::zoom( float ddistance ) { distance_property_->add( -ddistance ); }
 
 void HectorViewController::cancelAnimation() { camera_animator_->stop(); }
 
@@ -329,10 +337,8 @@ void HectorViewController::moveEyeWithNewFocus( const Ogre::Vector3 &eye,
     camera_animator_->animate( eye_point_property_->getVector(), eye,
                                focus_point_property_->getVector(), focus );
   } else {
-    disconnectPositionProperties();
-    eye_point_property_->setVector( eye );
-    focus_point_property_->setVector( focus );
-    connectPositionProperties();
+    setEyePoint( eye );
+    setFocusPoint( focus );
     context_->queueRender();
   }
 }
@@ -347,7 +353,6 @@ void HectorViewController::setMode( ViewMode value, bool animate_transition )
 
   Ogre::Vector3 focus = focus_point_property_->getVector();
   if ( value == view_modes::Mode2D ) {
-    camera3d_offset_->setVector( eye_point_property_->getVector() - focus );
     in_mode_transition_ = true;
     moveEyeWithNewFocus( focus + Ogre::Vector3::UNIT_Z * distance_property_->getFloat() +
                              Ogre::Vector3::UNIT_X / 10,
@@ -356,9 +361,7 @@ void HectorViewController::setMode( ViewMode value, bool animate_transition )
     camera_->setCustomProjectionMatrix( false, Ogre::Matrix4::IDENTITY );
     camera_->setProjectionType( Ogre::PT_PERSPECTIVE );
     getCameraParent( camera_ )->setFixedYawAxis( true, Ogre::Vector3::UNIT_Z );
-    moveEyeWithNewFocus( focus + camera3d_offset_->getVector().normalisedCopy() *
-                                     distance_property_->getFloat(),
-                         focus, false, animate_transition );
+    moveEyeWithNewFocus( eye_point_property_->getVector(), focus, false, animate_transition );
   }
   ros_interface_->publishViewMode();
   emit modeChanged();
@@ -402,11 +405,8 @@ void HectorViewController::onFocusPointPropertyChanged() { updateDistance(); }
 
 void HectorViewController::onDistancePropertyChanged()
 {
-  disconnectPositionProperties();
-  eye_point_property_->setVector( focus_point_property_->getVector() +
-                                  distance_property_->getFloat() *
-                                      getCameraOrientation( camera_ ).zAxis() );
-  connectPositionProperties();
+  setEyePoint( focus_point_property_->getVector() +
+               distance_property_->getFloat() * getCameraOrientation( camera_ ).zAxis() );
 }
 
 void HectorViewController::onTrackedFrameChanged()
@@ -429,35 +429,6 @@ void HectorViewController::onKeyboardNavigationChanged()
   }
 }
 
-void HectorViewController::connectPositionProperties()
-{
-  position_properties_connected_ = true;
-  connect( eye_point_property_, SIGNAL( changed() ), this, SLOT( onEyePropertyChanged() ) );
-  connect( focus_point_property_, SIGNAL( changed() ), this, SLOT( onFocusPointPropertyChanged() ) );
-  connect( distance_property_, SIGNAL( changed() ), this, SLOT( onDistancePropertyChanged() ) );
-}
-
-void HectorViewController::disconnectPositionProperties()
-{
-  position_properties_connected_ = false;
-  disconnect( eye_point_property_, SIGNAL( changed() ), this, SLOT( onEyePropertyChanged() ) );
-  disconnect( focus_point_property_, SIGNAL( changed() ), this,
-              SLOT( onFocusPointPropertyChanged() ) );
-  disconnect( distance_property_, SIGNAL( changed() ), this, SLOT( onDistancePropertyChanged() ) );
-}
-
-void HectorViewController::updateDistance()
-{
-  if ( position_properties_connected_ ) {
-    disconnect( distance_property_, SIGNAL( changed() ), this, SLOT( onDistancePropertyChanged() ) );
-  }
-  distance_property_->setFloat(
-      ( focus_point_property_->getVector() - eye_point_property_->getVector() ).length() );
-  if ( position_properties_connected_ ) {
-    connect( distance_property_, SIGNAL( changed() ), this, SLOT( onDistancePropertyChanged() ) );
-  }
-}
-
 void HectorViewController::updateOrientation( float delta_yaw, float delta_pitch, float delta_roll )
 {
   Ogre::Quaternion old_camera_orientation = getCameraOrientation( camera_ );
@@ -468,21 +439,22 @@ void HectorViewController::updateOrientation( float delta_yaw, float delta_pitch
   Ogre::Quaternion orientation_change = yaw * pitch * roll;
   Ogre::Quaternion new_camera_orientation = old_camera_orientation * orientation_change;
 
-  setCameraOrientation( camera_, new_camera_orientation );
-  Ogre::Vector3 new_eye_position = focus_point_property_->getVector() +
-                                   distance_property_->getFloat() * new_camera_orientation.zAxis();
-  eye_point_property_->setVector( new_eye_position );
+  Ogre::Vector3 focus = focus_point_property_->getVector();
+  Ogre::Vector3 new_eye_position =
+      focus + distance_property_->getFloat() * new_camera_orientation.zAxis();
+  setEyePoint( new_eye_position );
   setCameraPosition( camera_, new_eye_position );
+  setCameraFixedYawAxis( camera_, Ogre::Vector3::UNIT_Z );
+  setCameraDirection( camera_, focus - new_eye_position );
 }
 
-void HectorViewController::setPropertiesFromCamera( const Ogre::Camera *camera )
+void HectorViewController::handleMouseEvent( rviz_common::ViewportMouseEvent &evt )
 {
-  disconnectPositionProperties();
-  eye_point_property_->setVector( getCameraPosition( camera ) );
-  focus_point_property_->setVector(
-      getCameraPosition( camera ) -
-      distance_property_->getFloat() * ( getCameraOrientation( camera ) * Ogre::Vector3::UNIT_Z ) );
-  connectPositionProperties();
+  if ( mode() == view_modes::Mode3D ) {
+    handleMouseEvent3D( evt );
+  } else {
+    handleMouseEvent2D( evt );
+  }
 }
 
 void HectorViewController::handleMouseEvent2D( rviz_common::ViewportMouseEvent &evt )
@@ -492,7 +464,7 @@ void HectorViewController::handleMouseEvent2D( rviz_common::ViewportMouseEvent &
 
   float diff_x = 0;
   float diff_y = 0;
-  bool moved = false;
+  bool changed = false;
 
   if ( evt.type == QEvent::MouseButtonPress ) {
     dragging_ = true;
@@ -503,14 +475,14 @@ void HectorViewController::handleMouseEvent2D( rviz_common::ViewportMouseEvent &
   } else if ( dragging_ && evt.type == QEvent::MouseMove ) {
     diff_x = static_cast<float>( evt.x - evt.last_x ) / static_cast<float>( evt.device_pixel_ratio );
     diff_y = static_cast<float>( evt.y - evt.last_y ) / static_cast<float>( evt.device_pixel_ratio );
-    moved = true;
+    changed = true;
   }
 
   if ( evt.left() && !evt.shift() ) {
     setCursor( Rotate2D );
     angle_property_->add( diff_x * 0.005f );
-    getCameraParent( camera_ )->setOrientation(
-        Ogre::Quaternion( Ogre::Radian( angle_property_->getFloat() ), Ogre::Vector3::UNIT_Z ) );
+    setCameraOrientation( camera_, Ogre::Quaternion( Ogre::Radian( angle_property_->getFloat() ),
+                                                     Ogre::Vector3::UNIT_Z ) );
   } else if ( evt.middle() || evt.left() ) {
     setCursor( MoveXY );
     float cosa = std::cos( angle_property_->getFloat() );
@@ -527,10 +499,10 @@ void HectorViewController::handleMouseEvent2D( rviz_common::ViewportMouseEvent &
 
   if ( evt.wheel_delta != 0 ) {
     distance_property_->multiply( 1.0f - static_cast<float>( evt.wheel_delta ) * 0.001f );
-    moved = true;
+    changed = true;
   }
 
-  if ( moved )
+  if ( changed )
     context_->queueRender();
 }
 
@@ -594,40 +566,12 @@ void HectorViewController::handleMouseEvent3D( rviz_common::ViewportMouseEvent &
 
 void HectorViewController::update( float dt, float )
 {
-  Ogre::Vector3 focus = focus_point_property_->getVector();
-  Ogre::Vector3 eye = eye_point_property_->getVector();
+  updateMovement( dt );
+  updateCamera( dt );
+}
 
-  bool camera_position_changed = camera_animator_->updateCamera( eye, focus, dt );
-  focal_shape_->setPosition( focus_point_property_->getVector() );
-
-  if ( mode() == view_modes::Mode2D && !camera_position_changed ) {
-    if ( in_mode_transition_ ) {
-      camera_->setProjectionType( Ogre::PT_ORTHOGRAPHIC );
-      in_mode_transition_ = false;
-    }
-    auto camera_parent = getCameraParent( camera_ );
-    camera_parent->setPosition( focus.x, focus.y, ORTHO_VIEW_CONTROLLER_CAMERA_Z );
-    camera_parent->setOrientation(
-        Ogre::Quaternion( Ogre::Radian( angle_property_->getFloat() ), Ogre::Vector3::UNIT_Z ) );
-    auto width = static_cast<float>( camera_->getViewport()->getActualWidth() );
-    auto height = static_cast<float>( camera_->getViewport()->getActualHeight() );
-    float scale = DISTANCE_SCALE_FACTOR / distance_property_->getFloat();
-
-    Ogre::Matrix4 proj = rviz_rendering::buildScaledOrthoMatrix(
-        -width / scale / 2, width / scale / 2, -height / scale / 2, height / scale / 2,
-        camera_->getNearClipDistance(), camera_->getFarClipDistance() );
-    camera_->setCustomProjectionMatrix( true, proj );
-  }
-
-  if ( camera_position_changed ) {
-    disconnectPositionProperties();
-    eye_point_property_->setVector( eye );
-    focus_point_property_->setVector( focus );
-    updateDistance();
-    connectPositionProperties();
-
-    context_->queueRender();
-  }
+void HectorViewController::updateMovement( float dt )
+{
 
   if ( key_x_direction_ == 0 && key_y_direction_ == 0 )
     return;
@@ -638,8 +582,8 @@ void HectorViewController::update( float dt, float )
   float x_ratio = x / length;
   float y_ratio = y / length;
 
-  x = x_ratio * max_movement_property_->getFloat() * dt;
-  y = y_ratio * max_movement_property_->getFloat() * dt;
+  x = x_ratio * max_movement_property_->getFloat() * ( dt * 1E-9f );
+  y = y_ratio * max_movement_property_->getFloat() * ( dt * 1E-9f );
 
   if ( quick_mode_ ) {
     x *= 2;
@@ -655,6 +599,73 @@ void HectorViewController::update( float dt, float )
   x_direction.normalise();
   moveOnXYPlaneBy( -x * x_direction.x - y * y_direction.x, -x * x_direction.y - y * y_direction.y );
 }
+
+void HectorViewController::updateCamera( float dt )
+{
+  Ogre::Vector3 focus = focus_point_property_->getVector();
+  Ogre::Vector3 eye = eye_point_property_->getVector();
+  float distance = distance_property_->getFloat();
+
+  bool camera_position_changed = camera_animator_->updateCamera( eye, focus, dt * 1E-9f );
+  focal_shape_->setPosition( focus_point_property_->getVector() );
+
+  if ( camera_position_changed && !in_mode_transition_ ) {
+    setEyePoint( eye );
+    setFocusPoint( focus );
+    updateDistance();
+  }
+
+  if ( mode() == view_modes::Mode2D && !camera_position_changed ) {
+    if ( in_mode_transition_ ) {
+      camera_->setProjectionType( Ogre::PT_ORTHOGRAPHIC );
+      in_mode_transition_ = false;
+    }
+    auto width = static_cast<float>( camera_->getViewport()->getActualWidth() );
+    auto height = static_cast<float>( camera_->getViewport()->getActualHeight() );
+    float scale = DISTANCE_SCALE_FACTOR / distance;
+    Ogre::Matrix4 proj = rviz_rendering::buildScaledOrthoMatrix(
+        -width / scale / 2, width / scale / 2, -height / scale / 2, height / scale / 2,
+        camera_->getNearClipDistance(), camera_->getFarClipDistance() );
+    camera_->setCustomProjectionMatrix( true, proj );
+  }
+
+  if ( mode() == view_modes::Mode2D && !in_mode_transition_ ) {
+    setCameraPosition( camera_, Ogre::Vector3( focus.x, focus.y, ORTHO_VIEW_CONTROLLER_CAMERA_Z ) );
+    setCameraOrientation( camera_, Ogre::Quaternion( Ogre::Radian( angle_property_->getFloat() ),
+                                                     Ogre::Vector3::UNIT_Z ) );
+  } else {
+    setCameraPosition( camera_, eye );
+    setCameraDirection( camera_, focus - eye );
+  }
+}
+
+void HectorViewController::setEyePoint( const Ogre::Vector3 &eye )
+{
+  disconnect( eye_point_property_, SIGNAL( changed() ), this, SLOT( onEyePropertyChanged() ) );
+  eye_point_property_->setVector( eye );
+  connect( eye_point_property_, SIGNAL( changed() ), this, SLOT( onEyePropertyChanged() ) );
+}
+
+void HectorViewController::setFocusPoint( const Ogre::Vector3 &focus )
+{
+  disconnect( focus_point_property_, SIGNAL( changed() ), this,
+              SLOT( onFocusPointPropertyChanged() ) );
+  focus_point_property_->setVector( focus );
+  connect( focus_point_property_, SIGNAL( changed() ), this, SLOT( onFocusPointPropertyChanged() ) );
+}
+
+void HectorViewController::updateDistance()
+{
+  setDistance( ( focus_point_property_->getVector() - eye_point_property_->getVector() ).length() );
+}
+
+void HectorViewController::setDistance( float distance )
+{
+  disconnect( distance_property_, SIGNAL( changed() ), this, SLOT( onDistancePropertyChanged() ) );
+  distance_property_->setFloat( distance );
+  connect( distance_property_, SIGNAL( changed() ), this, SLOT( onDistancePropertyChanged() ) );
+}
+
 } // namespace hector_rviz_plugins
 
 #include <pluginlib/class_list_macros.hpp>
