@@ -38,65 +38,73 @@ PointCloudFilterDisplay::PointCloudFilterDisplay()
 {
   using namespace rviz_common::properties;
 
-  filter_property_ = new BoolProperty( "Enable filtering", true, "Enable/Disable all filters", this,
-                                       SLOT( updateParameters() ), this );
+  filter_group_property_ = new BoolProperty( "Filter", true, "Enable/Disable all filters", this,
+                                             SLOT( updateParameters() ), this );
+  // Move the filter group before the transformer properties
+  for ( int index = 0; index < Property::numChildren(); ++index ) {
+    if ( childAt( index ) != point_cloud_common_->xyz_transformer_property_ )
+      continue;
+    Property::moveChild( Property::numChildren() - 1, index );
+    break;
+  }
 
   radial_filter_property_ =
-      new BoolProperty( "Radial Filter", false, "Eable/Disable radial filtering", this,
-                        SLOT( updateParameters() ), this );
+      new BoolProperty( "Radial Filter", false, "Eable/Disable radial filtering",
+                        filter_group_property_, SLOT( updateParameters() ), this );
   max_radial_distance_property_ = new FloatProperty(
-      "Radius", 5.0, "Maximum distance from the origin for points to be displayed in meter.", this,
-      SLOT( updateParameters() ), this );
+      "Radius", 5.0, "Maximum distance from the origin for points to be displayed in meter.",
+      filter_group_property_, SLOT( updateParameters() ), this );
 
-  x_filter_property_ = new BoolProperty( "X Filter", false, "Activates X-Coord Filter", this,
-                                         SLOT( updateParameters() ), this );
+  x_filter_property_ = new BoolProperty( "X Filter", false, "Activates X-Coord Filter",
+                                         filter_group_property_, SLOT( updateParameters() ), this );
   x_min_value_property_ =
-      new FloatProperty( "X Min Value", -2.0, "Minimum value for points to be displayed.", this,
-                         SLOT( updateParameters() ), this );
+      new FloatProperty( "X Min Value", -2.0, "Minimum value for points to be displayed.",
+                         filter_group_property_, SLOT( updateParameters() ), this );
   x_max_value_property_ =
-      new FloatProperty( "X Max Value", 2.0, "Maximum value for points to be displayed.", this,
-                         SLOT( updateParameters() ), this );
+      new FloatProperty( "X Max Value", 2.0, "Maximum value for points to be displayed.",
+                         filter_group_property_, SLOT( updateParameters() ), this );
 
-  y_filter_property_ = new BoolProperty( "Y Filter", false, "Activates Y-Coord Filter", this,
-                                         SLOT( updateParameters() ), this );
+  y_filter_property_ = new BoolProperty( "Y Filter", false, "Activates Y-Coord Filter",
+                                         filter_group_property_, SLOT( updateParameters() ), this );
   y_min_value_property_ =
-      new FloatProperty( "Y Min Value", -2.0, "Minimum value for points to be displayed.", this,
-                         SLOT( updateParameters() ), this );
+      new FloatProperty( "Y Min Value", -2.0, "Minimum value for points to be displayed.",
+                         filter_group_property_, SLOT( updateParameters() ), this );
   y_max_value_property_ =
-      new FloatProperty( "Y Max Value", 2.0, "Maximum value for points to be displayed.", this,
-                         SLOT( updateParameters() ), this );
+      new FloatProperty( "Y Max Value", 2.0, "Maximum value for points to be displayed.",
+                         filter_group_property_, SLOT( updateParameters() ), this );
 
-  z_filter_property_ = new BoolProperty( "Z Filter", false, "Activates Z-Coord Filter", this,
-                                         SLOT( updateParameters() ), this );
+  z_filter_property_ = new BoolProperty( "Z Filter", false, "Activates Z-Coord Filter",
+                                         filter_group_property_, SLOT( updateParameters() ), this );
   z_min_value_property_ =
-      new FloatProperty( "Z Min Value", -2.0, "Minimum value for points to be displayed.", this,
-                         SLOT( updateParameters() ), this );
+      new FloatProperty( "Z Min Value", -2.0, "Minimum value for points to be displayed.",
+                         filter_group_property_, SLOT( updateParameters() ), this );
   z_max_value_property_ =
-      new FloatProperty( "Z Max Value", 2.0, "Maximum value for points to be displayed.", this,
-                         SLOT( updateParameters() ), this );
+      new FloatProperty( "Z Max Value", 2.0, "Maximum value for points to be displayed.",
+                         filter_group_property_, SLOT( updateParameters() ), this );
   filter_by_channel_value_property_ =
       new BoolProperty( "Filter by Channel Value", false, "Enable/Disable filter by channel value",
-                        this, SLOT( updateParameters() ), this );
-  channel_property_ = new EditableEnumProperty( "Channel", "", "The channel to filter by", this,
-                                                SLOT( updateParameters() ), this );
+                        filter_group_property_, SLOT( updateParameters() ), this );
+  channel_property_ =
+      new EditableEnumProperty( "Channel", "", "The channel to filter by", filter_group_property_,
+                                SLOT( updateParameters() ), this );
   channel_min_value_property_ =
       new FloatProperty( "Channel Min Value", -255.0, "Minimum value for points to be displayed.",
-                         this, SLOT( updateParameters() ), this );
+                         filter_group_property_, SLOT( updateParameters() ), this );
   channel_max_value_property_ =
       new FloatProperty( "Channel Max Value", 255.0, "Maximum value for points to be displayed.",
-                         this, SLOT( updateParameters() ), this );
+                         filter_group_property_, SLOT( updateParameters() ), this );
 
   frame_property_ = new TfFrameProperty(
-      "Frame", "<Fixed Frame>", "The frame to which the points are filtered to relatively.", this,
-      nullptr, true, SLOT( updateParameters() ), this );
+      "Frame", "<Fixed Frame>", "The frame to which the points are filtered to relatively.",
+      filter_group_property_, nullptr, true, SLOT( updateParameters() ), this );
 
   use_axes_frame_property_ =
       new BoolProperty( "Use other Axes", false,
                         "Whether to use a different Frame for the axes that filtering is based on",
-                        this, SLOT( updateParameters() ), this );
+                        filter_group_property_, SLOT( updateParameters() ), this );
   axes_frame_property_ =
       new TfFrameProperty( "Axes Frame", "<Fixed Frame>", "The frame used for the filter axes.",
-                           this, nullptr, true, SLOT( updateParameters() ), this );
+                           filter_group_property_, nullptr, true, SLOT( updateParameters() ), this );
 }
 
 PointCloudFilterDisplay::~PointCloudFilterDisplay() = default;
@@ -113,7 +121,7 @@ void PointCloudFilterDisplay::onInitialize()
 
 bool PointCloudFilterDisplay::isFilterActive() const
 {
-  return filter_property_->getBool() &&
+  return filter_group_property_->getBool() &&
          ( radial_filter_property_->getBool() || x_filter_property_->getBool() ||
            y_filter_property_->getBool() || z_filter_property_->getBool() ||
            filter_by_channel_value_property_->getBool() );
@@ -328,7 +336,7 @@ void PointCloudFilterDisplay::reset()
 void PointCloudFilterDisplay::updateParameters()
 {
 
-  const bool filter = filter_property_->getBool();
+  const bool filter = filter_group_property_->getBool();
   radial_filter_property_->setHidden( !filter );
   max_radial_distance_property_->setHidden( !filter || !radial_filter_property_->getBool() );
   x_filter_property_->setHidden( !filter );

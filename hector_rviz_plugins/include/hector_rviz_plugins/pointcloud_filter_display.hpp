@@ -89,7 +89,7 @@ protected:
    */
   void processMessage( sensor_msgs::msg::PointCloud2::ConstSharedPtr msg ) override;
 
-  rviz_common::properties::BoolProperty *filter_property_;
+  rviz_common::properties::BoolProperty *filter_group_property_;
   rviz_common::properties::BoolProperty *radial_filter_property_;
   rviz_common::properties::BoolProperty *x_filter_property_;
   rviz_common::properties::BoolProperty *y_filter_property_;
