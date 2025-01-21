@@ -62,13 +62,18 @@ public:
 
   bool isFilterActive() const;
 
-protected:
+private:
   /**
    * @brief onInitialize
    * This function is called when the display is initialized. It sets up the properties and the FrameManager.
    */
   void onInitialize() override;
 
+protected:
+  void onEnable() override;
+  void onDisable() override;
+
+private:
   /**
    * @brief filterPointCloud
    * This function filters the pointCloud depending on the parameters set in rviz.
@@ -122,8 +127,6 @@ protected:
 private Q_SLOTS:
 
   void updateParameters();
-
-  void enableFiltering();
 };
 
 } // namespace hector_rviz_plugins

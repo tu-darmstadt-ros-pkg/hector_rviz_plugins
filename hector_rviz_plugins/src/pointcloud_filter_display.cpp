@@ -186,6 +186,7 @@ bool PointCloudFilterDisplay::getTransform( const std::string &source_frame,
   orientation.x = static_cast<float>( transform.transform.rotation.x );
   orientation.y = static_cast<float>( transform.transform.rotation.y );
   orientation.z = static_cast<float>( transform.transform.rotation.z );
+  setTransformOk();
   return true;
 }
 
@@ -230,6 +231,7 @@ PointCloudFilterDisplay::filterPointCloud( const sensor_msgs::msg::PointCloud2::
   int32_t yi = rviz_default_plugins::findChannelIndex( msg, "y" );
   int32_t zi = rviz_default_plugins::findChannelIndex( msg, "z" );
   if ( xi == -1 || yi == -1 || zi == -1 ) {
+    setStatusStd( StatusProperty::Error, "Message", "Missing x, y or z channel. Dropping message." );
     return nullptr;
   }
   const uint32_t x_off = msg->fields[xi].offset;
@@ -246,6 +248,7 @@ PointCloudFilterDisplay::filterPointCloud( const sensor_msgs::msg::PointCloud2::
     setStatusStd( StatusProperty::Error, "Message", ss.str() );
     return nullptr;
   }
+  setStatusStd( StatusProperty::Ok, "Message", "Message received." );
 
   auto filtered_cloud = std::make_shared<sensor_msgs::msg::PointCloud2>();
   filtered_cloud->header = msg->header;
@@ -263,12 +266,15 @@ PointCloudFilterDisplay::filterPointCloud( const sensor_msgs::msg::PointCloud2::
     return nullptr;
   }
 
+  bool all_filters_ok = true;
   // get active channel name
   bool use_channel_filter = filter_by_channel_value_property_->getBool();
   int32_t channel_i =
       rviz_default_plugins::findChannelIndex( msg, channel_property_->getStdString() );
   if ( use_channel_filter && channel_i == -1 ) {
-    return nullptr;
+    setStatusStd( StatusProperty::Warn, "Filter", "Channel not found. Channel filter disabled." );
+    use_channel_filter = false;
+    all_filters_ok = false;
   }
   const uint32_t channel_off = use_channel_filter ? msg->fields[channel_i].offset : 0;
   const uint8_t channel_type = use_channel_filter ? msg->fields[channel_i].datatype : 0;
@@ -282,6 +288,9 @@ PointCloudFilterDisplay::filterPointCloud( const sensor_msgs::msg::PointCloud2::
   const bool use_x_filter = x_filter_property_->getBool();
   const bool use_y_filter = y_filter_property_->getBool();
   const bool use_z_filter = z_filter_property_->getBool();
+
+  if ( all_filters_ok )
+    setStatusStd( StatusProperty::Ok, "Filter", "Filter configuration valid." );
 
   const unsigned char *input_data = msg->data.data();
   for ( size_t i = 0; i < point_count; ++i, input_data += point_step ) {
@@ -367,6 +376,14 @@ void PointCloudFilterDisplay::updateParameters()
       point_cloud_common_->addMessage( cloud );
     }
   }
+}
+
+void PointCloudFilterDisplay::onEnable() { MessageFilterDisplay::onEnable(); }
+
+void PointCloudFilterDisplay::onDisable()
+{
+  MessageFilterDisplay::onDisable();
+  point_cloud_common_->onDisable();
 }
 
 } // namespace hector_rviz_plugins
