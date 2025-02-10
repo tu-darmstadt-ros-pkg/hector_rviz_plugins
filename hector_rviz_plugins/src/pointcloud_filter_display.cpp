@@ -16,6 +16,7 @@
  */
 
 #include "hector_rviz_plugins/pointcloud_filter_display.hpp"
+#include "./logging.hpp"
 
 #include <sensor_msgs/msg/point_cloud2.hpp>
 
@@ -131,15 +132,27 @@ void PointCloudFilterDisplay::processMessage( sensor_msgs::msg::PointCloud2::Con
 {
   // Check for old clouds outside of decay time
   auto now = context_->getClock()->now();
-  while ( !cloud_queue_.empty() && ( now - cloud_queue_.front()->header.stamp ).seconds() >
-                                       point_cloud_common_->decay_time_property_->getFloat() ) {
-    cloud_queue_.pop_front();
-  }
+  removeOldMessages( now );
 
-  cloud_queue_.emplace_back( msg );
+  cloud_queue_.emplace_back( Cloud{ now, msg } );
   channel_property_->clearOptions();
   for ( const auto &field : msg->fields ) { channel_property_->addOptionStd( field.name ); }
 
+  addMessage( msg );
+}
+void PointCloudFilterDisplay::removeOldMessages( const rclcpp::Time &now )
+{
+  while ( !cloud_queue_.empty() && ( now - cloud_queue_.front().receive_time ).seconds() >
+                                       point_cloud_common_->decay_time_property_->getFloat() ) {
+    HECTOR_RVIZ_LOG_DEBUG( "Removing old cloud: %f, %f, %f",
+                           cloud_queue_.front().receive_time.seconds(), now.seconds(),
+                           ( now - cloud_queue_.front().receive_time ).seconds() );
+    cloud_queue_.pop_front();
+  }
+}
+
+void PointCloudFilterDisplay::addMessage( const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msg )
+{
   if ( isFilterActive() ) {
     sensor_msgs::msg::PointCloud2::SharedPtr filtered = filterPointCloud( msg );
     if ( filtered ) {
@@ -174,18 +187,25 @@ bool PointCloudFilterDisplay::getTransform( const std::string &source_frame,
   translation.x = static_cast<float>( transform.transform.translation.x );
   translation.y = static_cast<float>( transform.transform.translation.y );
   translation.z = static_cast<float>( transform.transform.translation.z );
-  if ( axes_frame != filter_frame ) {
-    if ( !transformer->canTransform( axes_frame, source_frame, time_point, &error ) ) {
-      setStatusStd( StatusProperty::Error, "Transform",
-                    "Axes frame could not be transformed: " + error );
-      return false;
-    }
-    transform = transformer->lookupTransform( axes_frame, source_frame, time_point );
-  }
   orientation.w = static_cast<float>( transform.transform.rotation.w );
   orientation.x = static_cast<float>( transform.transform.rotation.x );
   orientation.y = static_cast<float>( transform.transform.rotation.y );
   orientation.z = static_cast<float>( transform.transform.rotation.z );
+  if ( axes_frame != filter_frame ) {
+    if ( !transformer->canTransform( axes_frame, filter_frame, time_point, &error ) ) {
+      setStatusStd( StatusProperty::Error, "Transform",
+                    "Axes frame could not be transformed: " + error );
+      return false;
+    }
+    transform = transformer->lookupTransform( axes_frame, filter_frame, time_point );
+    Ogre::Quaternion axes_orientation;
+    axes_orientation.w = static_cast<float>( transform.transform.rotation.w );
+    axes_orientation.x = static_cast<float>( transform.transform.rotation.x );
+    axes_orientation.y = static_cast<float>( transform.transform.rotation.y );
+    axes_orientation.z = static_cast<float>( transform.transform.rotation.z );
+    translation = axes_orientation * translation;
+    orientation = axes_orientation * orientation;
+  }
   setTransformOk();
   return true;
 }
@@ -231,6 +251,8 @@ PointCloudFilterDisplay::filterPointCloud( const sensor_msgs::msg::PointCloud2::
   int32_t yi = rviz_default_plugins::findChannelIndex( msg, "y" );
   int32_t zi = rviz_default_plugins::findChannelIndex( msg, "z" );
   if ( xi == -1 || yi == -1 || zi == -1 ) {
+    HECTOR_RVIZ_LOG_WARN(
+        "PointCloudFilterDisplay: Missing x, y, or z channel. Dropping message." );
     setStatusStd( StatusProperty::Error, "Message", "Missing x, y or z channel. Dropping message." );
     return nullptr;
   }
@@ -245,6 +267,7 @@ PointCloudFilterDisplay::filterPointCloud( const sensor_msgs::msg::PointCloud2::
     ss << "Data size (" << msg->data.size() << " bytes) does not match width (" << msg->width
        << ") times height (" << msg->height << ") times point_step (" << point_step
        << ").  Dropping message.";
+    HECTOR_RVIZ_LOG_ERROR( "PointCloudFilterDisplay: %s", ss.str().c_str() );
     setStatusStd( StatusProperty::Error, "Message", ss.str() );
     return nullptr;
   }
@@ -288,6 +311,12 @@ PointCloudFilterDisplay::filterPointCloud( const sensor_msgs::msg::PointCloud2::
   const bool use_x_filter = x_filter_property_->getBool();
   const bool use_y_filter = y_filter_property_->getBool();
   const bool use_z_filter = z_filter_property_->getBool();
+  const float x_min = x_min_value_property_->getFloat();
+  const float x_max = x_max_value_property_->getFloat();
+  const float y_min = y_min_value_property_->getFloat();
+  const float y_max = y_max_value_property_->getFloat();
+  const float z_min = z_min_value_property_->getFloat();
+  const float z_max = z_max_value_property_->getFloat();
 
   if ( all_filters_ok )
     setStatusStd( StatusProperty::Ok, "Filter", "Filter configuration valid." );
@@ -309,16 +338,13 @@ PointCloudFilterDisplay::filterPointCloud( const sensor_msgs::msg::PointCloud2::
     if ( use_radial_filter && transformed_pt.squaredLength() > max_radial_dist_2 ) {
       continue;
     }
-    if ( use_x_filter && !inBounds( transformed_pt.x, x_min_value_property_->getFloat(),
-                                    x_max_value_property_->getFloat() ) ) {
+    if ( use_x_filter && !inBounds( transformed_pt.x, x_min, x_max ) ) {
       continue;
     }
-    if ( use_y_filter && !inBounds( transformed_pt.y, y_min_value_property_->getFloat(),
-                                    y_max_value_property_->getFloat() ) ) {
+    if ( use_y_filter && !inBounds( transformed_pt.y, y_min, y_max ) ) {
       continue;
     }
-    if ( use_z_filter && !inBounds( transformed_pt.z, z_min_value_property_->getFloat(),
-                                    z_max_value_property_->getFloat() ) ) {
+    if ( use_z_filter && !inBounds( transformed_pt.z, z_min, z_max ) ) {
       continue;
     }
 
@@ -366,16 +392,8 @@ void PointCloudFilterDisplay::updateParameters()
 
   // Process each saved cloud again with the changed parameters and pass to point_cloud_common
   point_cloud_common_->reset();
-  for ( const auto &cloud : cloud_queue_ ) {
-    if ( isFilterActive() ) {
-      sensor_msgs::msg::PointCloud2::SharedPtr filtered = filterPointCloud( cloud );
-      if ( filtered ) {
-        point_cloud_common_->addMessage( filtered );
-      }
-    } else {
-      point_cloud_common_->addMessage( cloud );
-    }
-  }
+  removeOldMessages( context_->getClock()->now() );
+  for ( const auto &cloud : cloud_queue_ ) { addMessage( cloud.message ); }
 }
 
 void PointCloudFilterDisplay::onEnable() { MessageFilterDisplay::onEnable(); }

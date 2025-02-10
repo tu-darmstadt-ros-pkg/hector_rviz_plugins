@@ -62,6 +62,14 @@ public:
 
   bool isFilterActive() const;
 
+  /**
+   * @brief processMessage
+   * This function is called when a new PointCloud2 message is received. It is the callback function
+   * It adds the message to the queue, calls the filterPointCloud function and publishes the filtered message.
+   * @param msg The PointCloud2 message
+   */
+  void processMessage( sensor_msgs::msg::PointCloud2::ConstSharedPtr msg ) override;
+
 private:
   /**
    * @brief onInitialize
@@ -86,13 +94,10 @@ private:
   bool getTransform( const std::string &source_frame, const tf2::TimePoint &time_point,
                      Ogre::Vector3 &translation, Ogre::Quaternion &orientation );
 
-  /**
-   * @brief processMessage
-   * This function is called when a new PointCloud2 message is received. It is the callback function
-   * It adds the message to the queue, calls the filterPointCloud function and publishes the filtered message.
-   * @param msg The PointCloud2 message
-   */
-  void processMessage( sensor_msgs::msg::PointCloud2::ConstSharedPtr msg ) override;
+  void removeOldMessages( const rclcpp::Time &now );
+
+  //! Filter and add message to visualization
+  void addMessage( const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msg );
 
   rviz_common::properties::BoolProperty *filter_group_property_;
   rviz_common::properties::BoolProperty *radial_filter_property_;
@@ -116,12 +121,16 @@ private:
   rviz_common::properties::TfFrameProperty *frame_property_;
   rviz_common::properties::TfFrameProperty *axes_frame_property_;
 
+  struct Cloud {
+    rclcpp::Time receive_time;
+    sensor_msgs::msg::PointCloud2::ConstSharedPtr message;
+  };
   /*
    * cloud_queue_ is there so that in case of an accumulated pointCloud (decay_time > 0), the old data
    * of points filtered out is still available if the parameters for the filter are changed.
    * The decay_time is the time in seconds after which the old data is deleted. It can be set in rviz.
    */
-  std::deque<sensor_msgs::msg::PointCloud2::ConstSharedPtr> cloud_queue_;
+  std::deque<Cloud> cloud_queue_;
   std::unique_ptr<rviz_default_plugins::PointCloudCommon> point_cloud_common_;
 
 private Q_SLOTS:
