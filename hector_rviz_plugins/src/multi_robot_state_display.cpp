@@ -19,7 +19,7 @@
 
 #include "./logging.hpp"
 
-#include <moveit/robot_state_rviz_plugin/robot_state_display.h>
+#include <moveit/robot_state_rviz_plugin/robot_state_display.hpp>
 #include <rviz_common/display_context.hpp>
 #include <rviz_common/frame_manager_iface.hpp>
 #include <rviz_common/properties/ros_topic_property.hpp>
