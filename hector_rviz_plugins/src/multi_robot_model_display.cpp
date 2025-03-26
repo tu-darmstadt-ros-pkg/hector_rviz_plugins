@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 20245 Stefan Fabian
+ * Copyright (C) 2025 Stefan Fabian
  *
  * This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
