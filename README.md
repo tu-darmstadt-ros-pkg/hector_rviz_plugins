@@ -1,6 +1,6 @@
 # hector_rviz_plugins
 Collection of RViz plugins. Clone package into ROS Workspace and make. After that the rviz plugins are available for use within rviz. To use them simply add them in rviz.
-![Instructions for usage of plugins](instruction.png)
+![Instructions for usage of plugins](media/instruction.png)
 
 ## HectorViewController
 A view controller with support for animation, movement using the arrow keys, 2D and 3D mode as well as ROS interfaces for control by external nodes.
@@ -10,9 +10,10 @@ The tracked frame is followed with a P-controller with variable P-Gain to dampen
 ## MultiRobotStateDisplay
 An RViz display to display multiple robot states with possibly differing positions and orientations.
 
-![Two robot states with different poses](multi_robot_state_display.png)
+![Two robot states with different poses](media/multi_robot_state_display.png)
 
 ## PointCloudFilter
 An RViz display that allows to filter a point cloud spatially, i.e. removes points that lie above a specified theshold in a given direction (x,y,z) or max radial distance of a coordinate system.
 
 ![Filtering points with too big z-values](point_cloud_filter_display.png)
+![Filtering points with too big z-values](media/point_cloud_filter_display.png)

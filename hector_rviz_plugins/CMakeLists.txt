@@ -45,13 +45,11 @@ install(TARGETS ${PROJECT_NAME}
   LIBRARY DESTINATION lib
 )
 
-install(DIRECTORY include/
-  DESTINATION include
-)
+install(DIRECTORY icons DESTINATION share/${PROJECT_NAME})
 
-install(FILES plugin_description.xml
-  DESTINATION share/${PROJECT_NAME}
-)
+install(DIRECTORY include/ DESTINATION include)
+
+install(FILES plugin_description.xml DESTINATION share/${PROJECT_NAME})
 
 ament_export_include_directories(include)
 ament_export_targets(${PROJECT_NAME} HAS_LIBRARY_TARGET)
