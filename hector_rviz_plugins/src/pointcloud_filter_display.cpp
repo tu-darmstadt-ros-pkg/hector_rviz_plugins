@@ -140,9 +140,14 @@ void PointCloudFilterDisplay::processMessage( sensor_msgs::msg::PointCloud2::Con
 
   addMessage( msg );
 }
+
 void PointCloudFilterDisplay::removeOldMessages( const rclcpp::Time &now )
 {
-  while ( !cloud_queue_.empty() && ( now - cloud_queue_.front().receive_time ).seconds() >
+  if ( point_cloud_common_->decay_time_property_->getFloat() == 0 ) {
+    cloud_queue_.clear();
+    return;
+  }
+  while ( !cloud_queue_.empty() && ( now - cloud_queue_.front().receive_time ).seconds() >=
                                        point_cloud_common_->decay_time_property_->getFloat() ) {
     HECTOR_RVIZ_LOG_DEBUG( "Removing old cloud: %f, %f, %f",
                            cloud_queue_.front().receive_time.seconds(), now.seconds(),
@@ -392,7 +397,9 @@ void PointCloudFilterDisplay::updateParameters()
 
   // Process each saved cloud again with the changed parameters and pass to point_cloud_common
   point_cloud_common_->reset();
-  removeOldMessages( context_->getClock()->now() );
+  if ( point_cloud_common_->decay_time_property_->getFloat() != 0 ) {
+    removeOldMessages( context_->getClock()->now() );
+  }
   for ( const auto &cloud : cloud_queue_ ) { addMessage( cloud.message ); }
 }
 
