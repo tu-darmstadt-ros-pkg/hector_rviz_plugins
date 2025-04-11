@@ -16,15 +16,19 @@ set(CMAKE_AUTOMOC ON)
 ###########
 
 set(HEADERS
+  include/hector_rviz_plugins/rendering/pointcloud_normal_visual.hpp
   include/hector_rviz_plugins/hector_view_controller.hpp
   include/hector_rviz_plugins/multi_robot_state_display.hpp
   include/hector_rviz_plugins/pointcloud_filter_display.hpp
+  include/hector_rviz_plugins/pointcloud_normal_display.hpp
 )
 
 set(SOURCES
+  src/rendering/pointcloud_normal_visual.cpp
   src/hector_view_controller.cpp
   src/multi_robot_state_display.cpp
   src/pointcloud_filter_display.cpp
+  src/pointcloud_normal_display.cpp
 )
 
 add_library(${PROJECT_NAME} SHARED ${HEADERS} ${SOURCES})

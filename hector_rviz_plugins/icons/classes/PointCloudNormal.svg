@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="32"
+   height="32"
+   viewBox="0 0 32 32"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   sodipodi:docname="PointCloudNormal.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#505050"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="32"
+     inkscape:cx="20.5625"
+     inkscape:cy="14.234375"
+     inkscape:window-width="2494"
+     inkscape:window-height="1371"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="g2384" />
+  <defs
+     id="defs2" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <g
+       id="g2384"
+       transform="matrix(1.3373537,0.27139821,-0.27139821,1.3373537,4.0778097,-5.8452625)">
+      <rect
+         style="fill:#c061cb;fill-opacity:1;stroke-width:7.55906;stroke-linecap:round;stroke-linejoin:round"
+         id="rect2320"
+         width="1"
+         height="6"
+         x="4.7150326"
+         y="17.37709" />
+      <circle
+         style="fill:#62a0ea;stroke-width:15.1181;stroke-linecap:round;stroke-linejoin:round"
+         id="path234-9"
+         cx="5.2150326"
+         cy="24.239231"
+         r="2" />
+    </g>
+    <g
+       id="g2384-1"
+       transform="matrix(1.3646142,0,0,1.3646142,5.3117822,-8.4078541)">
+      <rect
+         style="fill:#c061cb;fill-opacity:1;stroke-width:7.55906;stroke-linecap:round;stroke-linejoin:round"
+         id="rect2320-9"
+         width="1"
+         height="6"
+         x="4.7150326"
+         y="17.37709" />
+      <circle
+         style="fill:#62a0ea;stroke-width:15.1181;stroke-linecap:round;stroke-linejoin:round"
+         id="path234-9-4"
+         cx="5.2150326"
+         cy="24.239231"
+         r="2" />
+    </g>
+    <g
+       id="g2384-7"
+       transform="matrix(1.3229917,-0.33446222,0.33446222,1.3229917,6.5940309,-2.4178515)">
+      <rect
+         style="fill:#c061cb;fill-opacity:1;stroke-width:7.55906;stroke-linecap:round;stroke-linejoin:round"
+         id="rect2320-8"
+         width="1"
+         height="6"
+         x="4.7150326"
+         y="17.37709" />
+      <circle
+         style="fill:#62a0ea;stroke-width:15.1181;stroke-linecap:round;stroke-linejoin:round"
+         id="path234-9-45"
+         cx="5.2150326"
+         cy="24.239231"
+         r="2" />
+    </g>
+    <g
+       id="g2384-7-0"
+       transform="matrix(0.71752508,-1.1607453,1.1607453,0.71752508,-4.5469842,10.064775)">
+      <rect
+         style="fill:#c061cb;fill-opacity:1;stroke-width:7.55906;stroke-linecap:round;stroke-linejoin:round"
+         id="rect2320-8-3"
+         width="1"
+         height="6"
+         x="4.7150326"
+         y="17.37709" />
+      <circle
+         style="fill:#62a0ea;stroke-width:15.1181;stroke-linecap:round;stroke-linejoin:round"
+         id="path234-9-45-6"
+         cx="5.2150326"
+         cy="24.239231"
+         r="2" />
+    </g>
+    <g
+       id="g2384-7-1"
+       transform="matrix(0.46167509,-1.2841449,1.2841449,0.46167509,-4.9376778,9.1372107)">
+      <rect
+         style="fill:#c061cb;fill-opacity:1;stroke-width:7.55906;stroke-linecap:round;stroke-linejoin:round"
+         id="rect2320-8-0"
+         width="1"
+         height="6"
+         x="4.7150326"
+         y="17.37709" />
+      <circle
+         style="fill:#62a0ea;stroke-width:15.1181;stroke-linecap:round;stroke-linejoin:round"
+         id="path234-9-45-63"
+         cx="5.2150326"
+         cy="24.239231"
+         r="2" />
+    </g>
+    <g
+       id="g2384-7-2"
+       transform="matrix(-0.11472757,-1.3597829,1.3597829,-0.11472757,-4.1733469,14.793903)">
+      <rect
+         style="fill:#c061cb;fill-opacity:1;stroke-width:7.55906;stroke-linecap:round;stroke-linejoin:round"
+         id="rect2320-8-06"
+         width="1"
+         height="6"
+         x="4.7150326"
+         y="17.37709" />
+      <circle
+         style="fill:#62a0ea;stroke-width:15.1181;stroke-linecap:round;stroke-linejoin:round"
+         id="path234-9-45-1"
+         cx="5.2150326"
+         cy="24.239231"
+         r="2" />
+    </g>
+  </g>
+</svg>

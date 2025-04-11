@@ -15,5 +15,12 @@ An RViz display to display multiple robot states with possibly differing positio
 ## PointCloudFilter
 An RViz display that allows to filter a point cloud spatially, i.e. removes points that lie above a specified theshold in a given direction (x,y,z) or max radial distance of a coordinate system.
 
-![Filtering points with too big z-values](point_cloud_filter_display.png)
 ![Filtering points with too big z-values](media/point_cloud_filter_display.png)
+
+## PointCloudNormal
+
+An RViz display that displays the normals of a pointcloud as lines pointing from the point to the normal direction.
+Please note that it does not visualize the pointcloud.
+
+![Visualizing the normals in the pointcloud](media/point_cloud_normal_display.png)
+

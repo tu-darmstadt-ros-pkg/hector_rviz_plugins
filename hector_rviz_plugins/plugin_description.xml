@@ -20,4 +20,10 @@
     </description>
     <message_type>sensor_msgs/msg/PointCloud2</message_type>
   </class>
+  <class name="hector_rviz_plugins/PointCloudNormal" type="hector_rviz_plugins::PointCloudNormalDisplay" base_class_type="rviz_common::Display">
+    <description>
+      Displays the normals for a pointcloud.
+    </description>
+    <message_type>sensor_msgs/msg/PointCloud2</message_type>
+  </class>
 </library>
