@@ -7,7 +7,13 @@ A view controller with support for animation, movement using the arrow keys, 2D 
 It can also track a specified frame allowing the camera to follow the robot.
 The tracked frame is followed with a P-controller with variable P-Gain to dampen the camera movements.
 
-## MultiRobotStateDisplay
+## MultiRobotModel
+An RViz display to display multiple robot models. The models are automatically determined by scanning for namespaces containing a `robot_description` topic.
+E.g. `/athena/robot_description` will create a `RobotModelDisplay` with `athena` as TF prefix and using the description topic as description.
+
+![Two robot models in the RViz scene](media/multi_robot_model_display.png)
+
+## MultiRobotState
 An RViz display to display multiple robot states with possibly differing positions and orientations.
 
 ![Two robot states with different poses](media/multi_robot_state_display.png)
