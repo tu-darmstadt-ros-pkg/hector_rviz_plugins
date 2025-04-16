@@ -48,7 +48,7 @@ private:
       std::map<std::string, std::unique_ptr<rviz_default_plugins::displays::RobotModelDisplay>,
                std::less<>>;
   RobotModelDisplayMap robot_model_displays_;
-  float scan_age_ = 999;
+  float scan_age_ns_ = 999 * 1E9f;
 
   rviz_common::properties::BoolProperty *enable_scan_property_;
   rviz_common::properties::FloatProperty *scan_interval_property_;
