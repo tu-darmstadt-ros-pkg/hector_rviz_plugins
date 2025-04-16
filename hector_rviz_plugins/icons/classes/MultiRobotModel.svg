@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="32"
+   height="32"
+   viewBox="0 0 32 32"
+   fill="none"
+   version="1.1"
+   id="svg1965"
+   sodipodi:docname="MultiRobotModel.svg"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1969" />
+  <sodipodi:namedview
+     id="namedview1967"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#505050"
+     showgrid="false"
+     inkscape:zoom="45.387417"
+     inkscape:cx="14.938061"
+     inkscape:cy="14.244036"
+     inkscape:window-width="2494"
+     inkscape:window-height="1371"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="g1953" />
+  <!-- Robot 1 -->
+  <g
+     transform="translate(2,10)"
+     id="g1943">
+    <rect
+       x="0"
+       y="2"
+       width="8"
+       height="10"
+       rx="1"
+       fill="#cbd5e1"
+       stroke="#1e293b"
+       stroke-width="0.8"
+       id="rect1935" />
+    <circle
+       cx="4"
+       cy="2.5999999"
+       r="1"
+       fill="#1e293b"
+       id="circle1937" />
+    <circle
+       cx="2.5"
+       cy="5"
+       r="0.8"
+       fill="#1e293b"
+       id="circle1939" />
+    <circle
+       cx="5.5"
+       cy="5"
+       r="0.8"
+       fill="#1e293b"
+       id="circle1941" />
+  </g>
+  <!-- Robot 2 (center) -->
+  <!-- Robot 3 -->
+  <g
+     id="g3111">
+    <g
+       transform="translate(12,6)"
+       id="g1953">
+      <rect
+         x="0"
+         y="3"
+         width="9"
+         height="12"
+         rx="1.2"
+         fill="#e2e8f0"
+         stroke="#1e293b"
+         stroke-width="0.8"
+         id="rect1945"
+         style="fill:#cbd5e1;fill-opacity:1" />
+      <circle
+         cx="4.5"
+         cy="3.8"
+         r="1.2"
+         fill="#1e293b"
+         id="circle1947" />
+      <circle
+         cx="3"
+         cy="6.3965878"
+         r="0.80000001"
+         fill="#1e293b"
+         id="circle1949" />
+      <circle
+         cx="6"
+         cy="6.3965878"
+         r="0.80000001"
+         fill="#1e293b"
+         id="circle1951" />
+    </g>
+    <rect
+       style="fill:#1e293b;fill-opacity:1;stroke-width:9.07088;stroke-linecap:round;stroke-linejoin:round"
+       id="rect3011-6"
+       width="6"
+       height="1.8"
+       x="13.5"
+       y="16.783684"
+       rx="0.89999998" />
+  </g>
+  <g
+     id="g3119">
+    <g
+       transform="translate(23,10)"
+       id="g1963">
+      <rect
+         x="0"
+         y="2"
+         width="7"
+         height="10"
+         rx="1"
+         fill="#f1f5f9"
+         stroke="#1e293b"
+         stroke-width="0.8"
+         id="rect1955"
+         style="fill:#cbd5e1;fill-opacity:1" />
+      <circle
+         cx="3.5"
+         cy="2.5999999"
+         r="1"
+         fill="#1e293b"
+         id="circle1957" />
+      <circle
+         cx="2.2"
+         cy="5"
+         r="0.7"
+         fill="#1e293b"
+         id="circle1959" />
+      <circle
+         cx="4.8"
+         cy="5"
+         r="0.7"
+         fill="#1e293b"
+         id="circle1961" />
+    </g>
+    <rect
+       style="fill:#1e293b;fill-opacity:1;stroke-width:7.55906;stroke-linecap:round;stroke-linejoin:round"
+       id="rect3011-0"
+       width="5"
+       height="1.5"
+       x="24"
+       y="18.682699"
+       rx="0.75" />
+  </g>
+  <rect
+     style="fill:#1e293b;fill-opacity:1;stroke-width:7.55906;stroke-linecap:round;stroke-linejoin:round"
+     id="rect3011"
+     width="5"
+     height="1.5"
+     x="3.5033457"
+     y="18.929909"
+     rx="0.75" />
+</svg>
