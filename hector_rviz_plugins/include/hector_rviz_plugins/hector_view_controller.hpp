@@ -74,7 +74,8 @@ public:
   void moveEyeWithNewFocus( const Ogre::Vector3 &eye, const Ogre::Vector3 &focus,
                             bool stop_tracking = true, bool animate = true,
                             bool switch_to_3d_mode = true );
-
+  void orbitEye( double yaw_delta, double theta_delta, bool stop_tracking, bool animate,
+                 bool switch_to_3d_mode );
   void cancelAnimation();
 
   void zoom( float ddistance );

@@ -9,6 +9,7 @@
 #include <hector_rviz_plugins_msgs/srv/move_eye_and_focus.hpp>
 #include <hector_rviz_plugins_msgs/srv/set_view_mode.hpp>
 #include <hector_rviz_plugins_msgs/srv/track_frame.hpp>
+#include <hector_rviz_plugins_msgs/msg/orbit_eye.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/string.hpp>
 
@@ -43,6 +44,12 @@ public:
     }
     publishTrackedFrame();
     publishViewMode();
+    orbit_eye_sub_ = node_->create_subscription<hector_rviz_plugins_msgs::msg::OrbitEye>(
+        "~/hector_view_controller/orbit_eye", rclcpp::QoS( 1 ).transient_local(),
+        [this]( const hector_rviz_plugins_msgs::msg::OrbitEye::ConstSharedPtr &msg ) {
+          view_controller_.orbitEye( msg->yaw_delta, msg->theta_delta, msg->stop_tracking,
+                                     !msg->disable_animation, msg->switch_to_3d_mode );
+        } );
   }
 
   void disableServices()
@@ -145,6 +152,7 @@ private:
   rclcpp::Node::SharedPtr node_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr tracked_frame_pub_;
   rclcpp::Publisher<hector_rviz_plugins_msgs::msg::ViewMode>::SharedPtr view_mode_pub_;
+  rclcpp::Subscription<hector_rviz_plugins_msgs::msg::OrbitEye>::SharedPtr orbit_eye_sub_;
   rclcpp::Service<hector_rviz_plugins_msgs::srv::MoveEye>::SharedPtr move_eye_service_;
   rclcpp::Service<hector_rviz_plugins_msgs::srv::MoveEyeAndFocus>::SharedPtr move_eye_and_focus_service_;
   rclcpp::Service<hector_rviz_plugins_msgs::srv::TrackFrame>::SharedPtr track_frame_service_;

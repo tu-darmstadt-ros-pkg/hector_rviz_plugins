@@ -12,6 +12,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/MultiRobotStateEntry.msg"
   "msg/DisplayMultiRobotState.msg"
   "msg/ViewMode.msg"
+  "msg/OrbitEye.msg"
   "srv/MoveEye.srv"
   "srv/MoveEyeAndFocus.srv"
   "srv/SetViewMode.srv"

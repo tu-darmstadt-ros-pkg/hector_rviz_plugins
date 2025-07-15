@@ -342,6 +342,46 @@ void HectorViewController::moveEyeWithNewFocus( const Ogre::Vector3 &eye,
     context_->queueRender();
   }
 }
+void HectorViewController::orbitEye(double yaw_delta, double theta_delta, bool stop_tracking,
+                                                bool animate, bool switch_to_3d_mode)
+{
+  // Get current eye & focus points
+  const Ogre::Vector3 eye = eye_point_property_->getVector();
+  const Ogre::Vector3 focus = focus_point_property_->getVector();
+
+  // Vector from focus → eye
+  Ogre::Vector3 dir = eye - focus;
+  const float  radius = dir.length();
+  if (radius < 1e-6f) {
+    HECTOR_RVIZ_LOG_WARN_STREAM( "orbitEye: eye and focus are too close together");
+    return;
+  }
+
+  // Compute current spherical angles
+  const float yaw = std::atan2( dir.y, dir.x );
+  const float theta = std::atan2(dir.z, std::sqrt(dir.x*dir.x + dir.y*dir.y));
+
+  // Apply deltas
+  const float yaw_new   = yaw + static_cast<float>(yaw_delta);
+  float theta_new = theta + static_cast<float>(theta_delta);
+
+  // Clamp theta to avoid flipping
+  const float max_theta = Ogre::Math::HALF_PI - 0.01f;
+  theta_new = Ogre::Math::Clamp(theta_new, -max_theta, max_theta);
+
+  // Reconstruct new direction vector in Cartesian coords
+  const float cos_theta = std::cos(theta_new);
+  Ogre::Vector3 new_dir{
+    cos_theta * std::cos(yaw_new),  // x
+    cos_theta * std::sin(yaw_new),  // y
+    std::sin(theta_new)             // z
+  };
+  new_dir *= radius;  // scale back to original distance
+
+  // Compute new eye position
+  const Ogre::Vector3 new_eye = focus + new_dir;
+  moveEyeWithNewFocus( new_eye, focus, stop_tracking, animate, switch_to_3d_mode );
+}
 
 ViewMode HectorViewController::mode() const { return mode_; }
 
