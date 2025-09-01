@@ -230,12 +230,13 @@ void HectorViewController::onInitialize()
   }
 
   target_scene_node_ = context_->getSceneManager()->getRootSceneNode()->createChildSceneNode();
+  camera_scene_node_ = target_scene_node_->createChildSceneNode();
   camera_->detachFromParent();
-  target_scene_node_->attachObject( camera_ );
+  camera_scene_node_->attachObject( camera_ );
   focal_shape_ = std::make_unique<rviz_rendering::Shape>(
       rviz_rendering::Shape::Sphere, context_->getSceneManager(), target_scene_node_ );
   focal_shape_->setColor( 1.0f, 1.0f, 0.0f, 0.5f );
-  focal_shape_->setScale( Ogre::Vector3( 0.1f, 0.1f, 0.1f ) );
+  focal_shape_->setScale( Ogre::Vector3( 0.05f, 0.05f, 0.05f ) );
   focal_shape_->getRootNode()->setVisible( false );
 
   onEnableTopicsChanged();

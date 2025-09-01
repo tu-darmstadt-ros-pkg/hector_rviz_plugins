@@ -142,6 +142,7 @@ protected:
 
   rviz_common::RenderPanel *render_panel_ = nullptr;
   Ogre::SceneNode *target_scene_node_ = nullptr;
+  Ogre::SceneNode *camera_scene_node_ = nullptr;
   std::unique_ptr<rviz_rendering::Shape> focal_shape_;
 
   std::shared_ptr<ViewControllerRosInterface> ros_interface_;
