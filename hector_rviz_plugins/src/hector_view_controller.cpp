@@ -162,7 +162,17 @@ void HectorViewController::lookAt( const Ogre::Vector3 &point )
 void HectorViewController::mimic( rviz_common::ViewController *source_view )
 {
   rviz_common::ViewController::mimic( source_view );
-  if ( source_view->getClassId() == "rviz_default_plugins/TopDownOrtho" ) {
+  auto other = dynamic_cast<HectorViewController *>( source_view );
+  if ( other != nullptr ) {
+    setMode( other->mode_, false );
+    if ( other->isTrackingFrame() ) {
+      trackFrame( other->trackedFrame() );
+    } else {
+      stopTracking();
+    }
+    moveEyeWithNewFocus( other->eye_point_property_->getVector(),
+                                other->focus_point_property_->getVector(), false, false, false );
+  } else if ( source_view->getClassId() == "rviz_default_plugins/TopDownOrtho" ) {
     setMode( view_modes::Mode2D, false );
     if ( source_view->getFocalPointStatus().exists_ ) {
       setFocusPoint( source_view->getFocalPointStatus().value_ );
