@@ -122,7 +122,7 @@ HectorViewController::HectorViewController()
                                             this, SLOT( onEyePropertyChanged() ), this );
   distance_property_ = new FloatProperty( "Distance", 5.0, "The distance from camera to focus point.",
                                           this, SLOT( onDistancePropertyChanged() ), this );
-  distance_property_->setMin( 0.01f );
+  distance_property_->setMin( 0.2f );
   angle_property_ = new FloatProperty( "Angle", 0, "", this );
 
   animation_duration_property_ = new FloatProperty(
