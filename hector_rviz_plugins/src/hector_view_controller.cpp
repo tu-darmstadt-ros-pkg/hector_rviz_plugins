@@ -171,6 +171,7 @@ void HectorViewController::mimic( rviz_common::ViewController *source_view )
       pos.z = 0;
       setFocusPoint( pos );
     }
+    setCameraFixedYawAxis( camera_, Ogre::Vector3::UNIT_Z );
   } else {
     setEyePoint( getCameraPosition( source_view->getCamera() ) );
     if ( source_view->getFocalPointStatus().exists_ ) {
@@ -209,7 +210,7 @@ void HectorViewController::onInitialize()
 
   camera_->setCustomProjectionMatrix( false, Ogre::Matrix4::IDENTITY );
   camera_->setProjectionType( Ogre::PT_PERSPECTIVE );
-  getCameraParent( camera_ )->setFixedYawAxis( true, Ogre::Vector3::UNIT_Z );
+  setCameraFixedYawAxis( camera_, Ogre::Vector3::UNIT_Z );
 
   render_panel_ = context_->getViewManager()->getRenderPanel();
   max_movement_property_->setHidden( !keyboard_navigation_property_->getBool() );
@@ -636,6 +637,7 @@ void HectorViewController::updateCamera( float dt )
   } else {
     setCameraPosition( camera_, eye );
     setCameraDirection( camera_, focus - eye );
+    setCameraFixedYawAxis( camera_, Ogre::Vector3::UNIT_Z );
   }
 }
 
