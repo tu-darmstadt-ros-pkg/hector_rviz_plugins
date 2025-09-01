@@ -213,6 +213,7 @@ void HectorViewController::onInitialize()
       "Tracked Frame",
       "", "The tracked frame. The view controller will follow this frame as it changes. Leave empty to disable tracking.",
       this, nullptr, false, SLOT( onTrackedFrameChanged() ), this );
+  tracked_frame_property_->setFrameManager( context_->getFrameManager() );
   tracked_frame_p_gain_property_ = new rviz_common::properties::FloatProperty(
       "Tracked Frame P-Gain", camera_animator_->pGain(),
       "The P-Gain used to follow the tracked frame. This parameter is scaled by delta t.", this,
