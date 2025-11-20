@@ -15,7 +15,7 @@
 repos:
   # Standard hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-added-large-files
       - id: check-docstring-first
@@ -31,7 +31,7 @@ repos:
 
   # CPP Checks
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: v20.1.4
+    rev: v21.1.6
     hooks:
       - id: clang-format
         name: Clang Format
@@ -47,14 +47,14 @@ repos:
 
   # Package XML
   - repo: https://github.com/Joschi3/package_xml_validation.git
-    rev: v1.2.3
+    rev: v1.2.8
     hooks:
       - id: format-package-xml
         name: Validate and Format package.xml
 
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.33.2
+    rev: 0.35.0
     hooks:
       - id: check-github-workflows
         args: ["--verbose"]
