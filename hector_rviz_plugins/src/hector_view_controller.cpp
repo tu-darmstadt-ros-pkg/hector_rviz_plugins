@@ -171,7 +171,7 @@ void HectorViewController::mimic( rviz_common::ViewController *source_view )
       stopTracking();
     }
     moveEyeWithNewFocus( other->eye_point_property_->getVector(),
-                                other->focus_point_property_->getVector(), false, false, false );
+                         other->focus_point_property_->getVector(), false, false, false );
   } else if ( source_view->getClassId() == "rviz_default_plugins/TopDownOrtho" ) {
     setMode( view_modes::Mode2D, false );
     if ( source_view->getFocalPointStatus().exists_ ) {

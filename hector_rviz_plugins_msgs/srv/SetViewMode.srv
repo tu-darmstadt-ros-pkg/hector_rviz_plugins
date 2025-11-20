@@ -2,4 +2,3 @@ hector_rviz_plugins_msgs/ViewMode mode
 # If true, do not animate mode transition and just jump there
 bool disable_animation
 ---
-

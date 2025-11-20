@@ -9,4 +9,3 @@ bool stop_tracking
 # If true, will switch to 3D mode otherwise stay in current mode
 bool switch_to_3d_mode
 ---
-

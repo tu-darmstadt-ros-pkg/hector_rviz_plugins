@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version='1.0' encoding='UTF-8'?>
 <package format="3">
   <name>hector_rviz_plugins</name>
   <version>0.0.0</version>
@@ -12,6 +12,8 @@
   <depend>hector_rviz_plugins_msgs</depend>
   <depend>moveit_ros_visualization</depend>
   <depend>rviz2</depend>
+  <depend>rviz_default_plugins</depend>
+  <depend>rviz_ogre_vendor</depend>
   <depend>std_msgs</depend>
 
   <export>
