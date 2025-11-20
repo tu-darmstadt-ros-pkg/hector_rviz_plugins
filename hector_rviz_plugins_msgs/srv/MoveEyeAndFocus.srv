@@ -9,4 +9,3 @@ bool disable_animation
 # If true, will stop tracking the tracked frame if there is one.
 bool stop_tracking
 ---
-

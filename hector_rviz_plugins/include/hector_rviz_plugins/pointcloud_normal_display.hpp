@@ -25,7 +25,7 @@ namespace rviz_common::properties
 {
 class ColorProperty;
 class FloatProperty;
-}
+} // namespace rviz_common::properties
 
 namespace hector_rviz_plugins
 {
