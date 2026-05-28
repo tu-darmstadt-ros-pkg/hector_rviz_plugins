@@ -256,8 +256,8 @@ PointCloudFilterDisplay::filterPointCloud( const sensor_msgs::msg::PointCloud2::
   int32_t yi = rviz_default_plugins::findChannelIndex( msg, "y" );
   int32_t zi = rviz_default_plugins::findChannelIndex( msg, "z" );
   if ( xi == -1 || yi == -1 || zi == -1 ) {
-    HECTOR_RVIZ_LOG_WARN(
-        "PointCloudFilterDisplay: Missing x, y, or z channel. Dropping message." );
+    HECTOR_RVIZ_LOG_WARN_THROTTLE(
+        1000, "PointCloudFilterDisplay: Missing x, y, or z channel. Dropping message." );
     setStatusStd( StatusProperty::Error, "Message", "Missing x, y or z channel. Dropping message." );
     return nullptr;
   }
@@ -272,7 +272,7 @@ PointCloudFilterDisplay::filterPointCloud( const sensor_msgs::msg::PointCloud2::
     ss << "Data size (" << msg->data.size() << " bytes) does not match width (" << msg->width
        << ") times height (" << msg->height << ") times point_step (" << point_step
        << ").  Dropping message.";
-    HECTOR_RVIZ_LOG_ERROR( "PointCloudFilterDisplay: %s", ss.str().c_str() );
+    HECTOR_RVIZ_LOG_ERROR_THROTTLE( 1000, "PointCloudFilterDisplay: %s", ss.str().c_str() );
     setStatusStd( StatusProperty::Error, "Message", ss.str() );
     return nullptr;
   }

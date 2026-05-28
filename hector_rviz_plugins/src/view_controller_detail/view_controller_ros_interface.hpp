@@ -67,7 +67,10 @@ public:
             pose.position = req->eye;
             Ogre::Vector3 pos;
             Ogre::Quaternion _;
-            frame_manager_->transform( req->header, pose, pos, _ );
+            if ( !frame_manager_->transform( req->header, pose, pos, _ ) ) {
+              HECTOR_RVIZ_LOG_WARN( "Failed to transform MoveEye target point to fixed frame." );
+              return;
+            }
             view_controller_.moveEyeWithFocusTo( pos, req->stop_tracking, !req->disable_animation,
                                                  req->switch_to_3d_mode );
           } );
@@ -85,12 +88,20 @@ public:
             Ogre::Vector3 eye;
             Ogre::Vector3 focus;
             Ogre::Quaternion _;
-            frame_manager_->transform( req->header, pose, eye, _ );
+            if ( !frame_manager_->transform( req->header, pose, eye, _ ) ) {
+              HECTOR_RVIZ_LOG_WARN(
+                  "Failed to transform MoveEyeAndFocus eye point to fixed frame." );
+              return;
+            }
             pose.position = req->focus;
-            frame_manager_->transform( req->header, pose, focus, _ );
+            if ( !frame_manager_->transform( req->header, pose, focus, _ ) ) {
+              HECTOR_RVIZ_LOG_WARN(
+                  "Failed to transform MoveEyeAndFocus focus point to fixed frame." );
+              return;
+            }
             view_controller_.moveEyeWithNewFocus( eye, focus, req->stop_tracking,
                                                   !req->disable_animation );
-            return true;
+            return;
           } );
     }
     if ( set_view_mode_service_ == nullptr ) {

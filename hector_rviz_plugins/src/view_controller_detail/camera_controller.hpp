@@ -151,7 +151,8 @@ public:
       if ( !frame_manager->transformHasProblems( frame, error ) ) {
         error = "Unknown";
       }
-      HECTOR_RVIZ_LOG_WARN( "Could not get transform to tracked frame! Reason: %s", error.c_str() );
+      HECTOR_RVIZ_LOG_WARN_THROTTLE( 1000, "Could not get transform to tracked frame! Reason: %s",
+                                     error.c_str() );
       return false;
     }
     return true;

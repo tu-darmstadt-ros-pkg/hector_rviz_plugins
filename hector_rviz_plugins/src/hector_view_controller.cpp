@@ -53,7 +53,6 @@ namespace hector_rviz_plugins
 namespace
 {
 constexpr float ORTHO_VIEW_CONTROLLER_CAMERA_Z = 500;
-constexpr float DISTANCE_SCALE_FACTOR = 2200;
 
 Ogre::SceneNode *getCameraParent( Ogre::Camera *camera )
 {
@@ -364,6 +363,10 @@ void HectorViewController::setMode( ViewMode value, bool animate_transition )
     return;
   mode_ = value;
 
+  mode2d_property_->setBool( value == view_modes::Mode2D );
+  angle_property_->setHidden( !mode2d_property_->getBool() );
+  eye_point_property_->setHidden( mode2d_property_->getBool() );
+
   Ogre::Vector3 focus = focus_point_property_->getVector();
   if ( value == view_modes::Mode2D ) {
     in_mode_transition_ = true;
@@ -500,9 +503,13 @@ void HectorViewController::handleMouseEvent2D( rviz_common::ViewportMouseEvent &
     setCursor( MoveXY );
     float cosa = std::cos( angle_property_->getFloat() );
     float sina = std::sin( angle_property_->getFloat() );
-    moveOnXYPlaneBy(
-        ( -diff_x * cosa - diff_y * sina ) * distance_property_->getFloat() / DISTANCE_SCALE_FACTOR,
-        ( -diff_x * sina + diff_y * cosa ) * distance_property_->getFloat() / DISTANCE_SCALE_FACTOR );
+
+    auto height = static_cast<float>( camera_->getViewport()->getActualHeight() );
+    float fov_y = camera_->getFOVy().valueRadians();
+    float scale = height / ( 2.0f * distance_property_->getFloat() * std::tan( fov_y / 2.0f ) );
+
+    moveOnXYPlaneBy( ( -diff_x * cosa - diff_y * sina ) / scale,
+                     ( -diff_x * sina + diff_y * cosa ) / scale );
   } else if ( evt.right() ) {
     setCursor( Zoom );
     distance_property_->multiply( 1.0f + diff_y * 0.01f );
@@ -635,7 +642,8 @@ void HectorViewController::updateCamera( float dt )
     }
     auto width = static_cast<float>( camera_->getViewport()->getActualWidth() );
     auto height = static_cast<float>( camera_->getViewport()->getActualHeight() );
-    float scale = DISTANCE_SCALE_FACTOR / distance;
+    float fov_y = camera_->getFOVy().valueRadians();
+    float scale = height / ( 2.0f * distance * std::tan( fov_y / 2.0f ) );
     Ogre::Matrix4 proj = rviz_rendering::buildScaledOrthoMatrix(
         -width / scale / 2, width / scale / 2, -height / scale / 2, height / scale / 2,
         camera_->getNearClipDistance(), camera_->getFarClipDistance() );
