@@ -177,7 +177,22 @@ public:
         Ogre::Vector3 animation_focus_goal_offset = animation_focus_goal_ - animation_focus_start_;
         Ogre::Vector3 animation_eye_goal_offset = animation_eye_goal_ - animation_eye_start_;
         focus = animation_focus_start_ + completed_percent * animation_focus_goal_offset;
-        eye = animation_eye_start_ + completed_percent * animation_eye_goal_offset;
+
+        Ogre::Vector3 interpolated_eye =
+            animation_eye_start_ + completed_percent * animation_eye_goal_offset;
+
+        // Maintain distance smoothly rather than linearly interpolating in 3D space which dips
+        float start_dist = ( animation_eye_start_ - animation_focus_start_ ).length();
+        float goal_dist = ( animation_eye_goal_ - animation_focus_goal_ ).length();
+        float current_dist = start_dist + completed_percent * ( goal_dist - start_dist );
+
+        Ogre::Vector3 dir = interpolated_eye - focus;
+        if ( dir.length() > 1e-6 ) {
+          dir.normalise();
+          eye = focus + dir * current_dist;
+        } else {
+          eye = interpolated_eye;
+        }
       } else if ( completed_percent >= 1 ) {
         focus = animation_focus_goal_;
         eye = animation_eye_goal_;
