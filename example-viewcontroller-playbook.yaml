@@ -1,0 +1,66 @@
+# Example RViz View Controller Playbook
+#
+# Usage:
+# ros2 run hector_rviz_plugins playbook_node.py path/to/example-viewcontroller-playbook.yaml
+
+- action: set_view_mode
+  mode: "3d"
+  disable_animation: true # Jumps directly to 3D mode
+
+# 1. Initial Position: Move the camera (eye) and the point it looks at (focus)
+- action: move_eye_and_focus
+  eye: [5.0, 0.0, 5.0]
+  focus: [0.0, 0.0, 0.0]
+  frame: "map"
+  disable_animation: false
+
+- action: sleep
+  duration: 1.0
+
+# 2. Camera Rotation: Spin the camera around the current focus point
+#    The angle is given in radians (e.g. 6.28318 is roughly 360 degrees)
+- action: spin
+  angle: 6.28318 # 2 * pi for a full rotation
+  duration: 4.0
+  # Optional overrides:
+  # distance: 5.0
+  # z_offset: 3.0
+
+- action: sleep
+  duration: 1.0
+
+# 3. Track a Frame: Make the view controller automatically follow a moving TF frame (e.g., a robot)
+- action: track_frame
+  frame: "base_link" # Replace with your robot's actual base frame
+
+- action: sleep
+  duration: 3.0
+
+# 4. Stop Tracking: Provide an empty string to un-attach the camera from the frame
+- action: track_frame
+  frame: ""
+
+# 5. Move Eye Only: Change the camera position but keep looking at the previous focus
+- action: move_eye
+  eye: [0.0, 5.0, 2.0]
+  disable_animation: false
+  switch_to_3d_mode: true # Forces 3D mode if it was in 2D
+
+- action: sleep
+  duration: 1.5
+
+# 6. Change View Mode: Switch to top-down 2D orthographic mode
+- action: set_view_mode
+  mode: "2d"
+  disable_animation: false
+
+- action: sleep
+  duration: 2.0
+
+# 7. Final Transition: Return to 3D mode and a neutral view
+- action: set_view_mode
+  mode: "3d"
+
+- action: move_eye_and_focus
+  eye: [4.0, -4.0, 4.0]
+  focus: [0.0, 0.0, 0.0]

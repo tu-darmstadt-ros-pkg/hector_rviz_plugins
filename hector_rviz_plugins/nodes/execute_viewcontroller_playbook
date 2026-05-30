@@ -1,0 +1,200 @@
+#!/usr/bin/env python3
+
+import rclpy
+from rclpy.node import Node
+from rclpy.executors import SingleThreadedExecutor
+from rclpy.utilities import remove_ros_args
+from hector_rviz_plugins_msgs.srv import MoveEye, MoveEyeAndFocus, TrackFrame, SetViewMode
+import yaml
+import time
+import math
+import sys
+
+class PlaybookNode(Node):
+    def __init__(self, playbook_path):
+        super().__init__('hector_playbook_node')
+
+        self.declare_parameter('rviz_node_name', 'rviz')
+        rviz_node_name = self.get_parameter('rviz_node_name').value
+
+        self.move_eye_cli = self.create_client(MoveEye, f'/{rviz_node_name}/hector_view_controller/move_eye')
+        self.move_eye_and_focus_cli = self.create_client(MoveEyeAndFocus, f'/{rviz_node_name}/hector_view_controller/move_eye_and_focus')
+        self.track_frame_cli = self.create_client(TrackFrame, f'/{rviz_node_name}/hector_view_controller/set_tracked_frame')
+        self.set_view_mode_cli = self.create_client(SetViewMode, f'/{rviz_node_name}/hector_view_controller/set_view_mode')
+
+        # Spin this executor inline (main thread) for service responses so the playbook stays
+        # responsive to shutdown/Ctrl+C; a worker thread would never receive SIGINT.
+        # Keep a strong reference: Node.executor only stores a weakref, so the executor would
+        # otherwise be garbage-collected immediately.
+        self._spin_executor = SingleThreadedExecutor()
+        self._spin_executor.add_node(self)
+
+        self.current_focus = [0.0, 0.0, 0.0]
+        self.current_eye = [4.0, 0.0, 3.0]
+        self.current_frame = 'map'
+
+        self.playbook_path = playbook_path
+
+    def wait_for_services(self):
+        self.get_logger().info('Waiting for hector_view_controller services...')
+        clients = [
+            self.move_eye_cli,
+            self.move_eye_and_focus_cli,
+            self.track_frame_cli,
+            self.set_view_mode_cli,
+        ]
+        for cli in clients:
+            while rclpy.ok() and not cli.wait_for_service(timeout_sec=2.0):
+                self.get_logger().warn(f"Still waiting for service '{cli.srv_name}'...")
+        self.get_logger().info('Services found.')
+
+    def call_service(self, client, request, timeout_sec=10.0):
+        # Spin while waiting so the call returns promptly on shutdown/Ctrl+C instead of
+        # blocking forever (spin_until_future_complete exits when the context is invalid).
+        future = client.call_async(request)
+        self._spin_executor.spin_until_future_complete(future, timeout_sec=timeout_sec)
+        if not future.done():
+            future.cancel()
+            if rclpy.ok():
+                self.get_logger().warn(f"Service call to '{client.srv_name}' timed out.")
+            return None
+        return future.result()
+
+    def sleep(self, duration):
+        # Interruptible sleep: return promptly on shutdown/Ctrl+C instead of blocking the
+        # whole duration in a single uninterruptible time.sleep.
+        remaining = float(duration)
+        while remaining > 0.0 and rclpy.ok():
+            chunk = min(0.05, remaining)
+            time.sleep(chunk)
+            remaining -= chunk
+
+    def execute_playbook(self):
+        with open(self.playbook_path, 'r') as f:
+            playbook = yaml.safe_load(f)
+
+        for step in playbook:
+            if not rclpy.ok():
+                break
+            action = step.get('action')
+            self.get_logger().info(f"Executing action: {action}")
+
+            if action == 'move_eye':
+                req = MoveEye.Request()
+                req.eye.x, req.eye.y, req.eye.z = float(step['eye'][0]), float(step['eye'][1]), float(step['eye'][2])
+                req.header.frame_id = step.get('frame', self.current_frame)
+                req.disable_animation = step.get('disable_animation', False)
+                req.stop_tracking = step.get('stop_tracking', False)
+                req.switch_to_3d_mode = step.get('switch_to_3d_mode', False)
+                self.call_service(self.move_eye_cli, req)
+                self.current_eye = step['eye']
+                self.current_frame = req.header.frame_id
+
+            elif action == 'move_eye_and_focus':
+                req = MoveEyeAndFocus.Request()
+                req.eye.x, req.eye.y, req.eye.z = float(step['eye'][0]), float(step['eye'][1]), float(step['eye'][2])
+                req.focus.x, req.focus.y, req.focus.z = float(step['focus'][0]), float(step['focus'][1]), float(step['focus'][2])
+                req.header.frame_id = step.get('frame', self.current_frame)
+                req.disable_animation = step.get('disable_animation', False)
+                req.stop_tracking = step.get('stop_tracking', False)
+                self.call_service(self.move_eye_and_focus_cli, req)
+                self.current_eye = step['eye']
+                self.current_focus = step['focus']
+                self.current_frame = req.header.frame_id
+
+            elif action == 'track_frame':
+                req = TrackFrame.Request()
+                req.frame = step.get('frame', '')
+                self.call_service(self.track_frame_cli, req)
+                # Do not change current_frame for coordinate inputs when tracking changes,
+                # to avoid accidentally sending coordinates in a moving or non-existent frame.
+
+            elif action == 'set_view_mode':
+                req = SetViewMode.Request()
+                mode_str = step.get('mode', '3d').lower()
+                if mode_str == '2d':
+                    req.mode.mode = req.mode.MODE_2D
+                else:
+                    req.mode.mode = req.mode.MODE_3D
+                req.disable_animation = step.get('disable_animation', False)
+                self.call_service(self.set_view_mode_cli, req)
+
+            elif action == 'sleep':
+                self.sleep(step['duration'])
+
+            elif action == 'spin':
+                focus = step.get('focus', self.current_focus)
+                self.current_focus = focus
+
+                dx = self.current_eye[0] - focus[0]
+                dy = self.current_eye[1] - focus[1]
+                current_distance = math.sqrt(dx**2 + dy**2)
+                current_z_offset = self.current_eye[2] - focus[2]
+                start_angle = math.atan2(dy, dx)
+
+                distance = float(step.get('distance', current_distance))
+                if distance == 0.0:
+                    distance = 5.0 # fallback
+
+                angle = float(step.get('angle', 2 * math.pi))
+                duration = float(step.get('duration', 5.0))
+                z_offset = float(step.get('z_offset', current_z_offset))
+                frame = step.get('frame', self.current_frame)
+
+                # We use small steps to approximate spin
+                fps = 30
+                steps = int(duration * fps)
+                if steps == 0:
+                    steps = 1
+                sleep_time = duration / steps
+
+                for i in range(1, steps + 1):
+                    if not rclpy.ok():
+                        break
+                    t = i / steps
+                    current_angle = start_angle + t * angle
+
+                    eye_x = focus[0] + distance * math.cos(current_angle)
+                    eye_y = focus[1] + distance * math.sin(current_angle)
+                    eye_z = focus[2] + z_offset
+
+                    req = MoveEyeAndFocus.Request()
+                    req.eye.x, req.eye.y, req.eye.z = float(eye_x), float(eye_y), float(eye_z)
+                    req.focus.x, req.focus.y, req.focus.z = float(focus[0]), float(focus[1]), float(focus[2])
+                    req.header.frame_id = frame
+                    req.disable_animation = True
+                    req.stop_tracking = False
+                    self.call_service(self.move_eye_and_focus_cli, req)
+
+                    self.current_eye = [eye_x, eye_y, eye_z]
+
+                    self.sleep(sleep_time)
+            else:
+                self.get_logger().warn(f"Unknown action: {action}")
+
+def main(args=None):
+    rclpy.init(args=args)
+
+    # Strip ROS args (e.g. --ros-args -p rviz_node_name:=foo) before reading the playbook path
+    argv = remove_ros_args(args if args is not None else sys.argv)
+    if len(argv) < 2:
+        print("Usage: ros2 run hector_rviz_plugins execute_viewcontroller_playbook <path_to_playbook.yaml>")
+        rclpy.try_shutdown()
+        sys.exit(1)
+    playbook_path = argv[1]
+
+    node = PlaybookNode(playbook_path)
+    try:
+        node.wait_for_services()
+        node.execute_playbook()
+    except KeyboardInterrupt:
+        pass
+    except Exception as e:
+        node.get_logger().error(f"Playbook execution failed: {e}")
+    finally:
+        node._spin_executor.shutdown()
+        node.destroy_node()
+        rclpy.try_shutdown()
+
+if __name__ == '__main__':
+    main()

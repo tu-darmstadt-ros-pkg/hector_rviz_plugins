@@ -3,18 +3,20 @@
   <name>hector_rviz_plugins</name>
   <version>0.0.0</version>
   <description>The hector_rviz_plugins package</description>
-
   <maintainer email="fabian@sim.tu-darmstadt.de">Stefan Fabian</maintainer>
-
   <license>GPLv3</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+
   <depend>hector_rviz_plugins_msgs</depend>
   <depend>moveit_ros_visualization</depend>
   <depend>rviz2</depend>
   <depend>rviz_default_plugins</depend>
   <depend>rviz_ogre_vendor</depend>
   <depend>std_msgs</depend>
+
+  <exec_depend>python3-yaml</exec_depend>
+  <exec_depend>rclpy</exec_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

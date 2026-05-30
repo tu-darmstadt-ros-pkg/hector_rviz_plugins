@@ -52,6 +52,9 @@ install(
   EXPORT ${PROJECT_NAME}
   LIBRARY DESTINATION lib)
 
+install(PROGRAMS nodes/execute_viewcontroller_playbook
+        DESTINATION lib/${PROJECT_NAME})
+
 install(DIRECTORY icons DESTINATION share/${PROJECT_NAME})
 
 install(DIRECTORY include/ DESTINATION include)

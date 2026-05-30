@@ -3,3 +3,5 @@
 cmake-build-*/
 build/
 pose_prediction_evaluation/data/*.txt
+__pycache__/
+*.pyc
