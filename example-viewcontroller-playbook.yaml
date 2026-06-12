@@ -1,7 +1,7 @@
 # Example RViz View Controller Playbook
 #
 # Usage:
-# ros2 run hector_rviz_plugins playbook_node.py path/to/example-viewcontroller-playbook.yaml
+# ros2 run hector_rviz_plugins execute_viewcontroller_playbook path/to/example-viewcontroller-playbook.yaml
 
 - action: set_view_mode
   mode: "3d"
