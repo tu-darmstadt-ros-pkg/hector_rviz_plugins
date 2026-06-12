@@ -112,7 +112,7 @@ PointCloudFilterDisplay::~PointCloudFilterDisplay() = default;
 
 void PointCloudFilterDisplay::onInitialize()
 {
-  MFDClass::onInitialize();
+  PC2RDClass::onInitialize();
 
   frame_property_->setFrameManager( context_->getFrameManager() );
   axes_frame_property_->setFrameManager( context_->getFrameManager() );
@@ -368,7 +368,7 @@ void PointCloudFilterDisplay::update( float wall_dt, float ros_dt )
 
 void PointCloudFilterDisplay::reset()
 {
-  MFDClass::reset();
+  PC2RDClass::reset();
   point_cloud_common_->reset();
   cloud_queue_.clear();
 }
@@ -403,11 +403,11 @@ void PointCloudFilterDisplay::updateParameters()
   for ( const auto &cloud : cloud_queue_ ) { addMessage( cloud.message ); }
 }
 
-void PointCloudFilterDisplay::onEnable() { MessageFilterDisplay::onEnable(); }
+void PointCloudFilterDisplay::onEnable() { PC2RDClass::onEnable(); }
 
 void PointCloudFilterDisplay::onDisable()
 {
-  MessageFilterDisplay::onDisable();
+  PC2RDClass::onDisable();
   point_cloud_common_->onDisable();
 }
 

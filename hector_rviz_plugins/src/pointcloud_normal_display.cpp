@@ -39,7 +39,7 @@ void PointCloudNormalDisplay::onInitialize()
   visual_ = std::make_unique<PointCloudNormalVisual>( scene_node_ );
   updateColor();
   updateNormalLength();
-  MFDClass::onInitialize();
+  PC2RDClass::onInitialize();
 }
 
 namespace
@@ -77,14 +77,14 @@ void PointCloudNormalDisplay::processMessage( sensor_msgs::msg::PointCloud2::Con
 }
 void PointCloudNormalDisplay::reset()
 {
-  MFDClass::reset();
+  PC2RDClass::reset();
   visual_->updateData( nullptr );
   visual_->setVisible( false );
 }
 
 void PointCloudNormalDisplay::update( float wall_dt, float ros_dt )
 {
-  MFDClass::update( wall_dt, ros_dt );
+  PC2RDClass::update( wall_dt, ros_dt );
 }
 
 void PointCloudNormalDisplay::updateColor()

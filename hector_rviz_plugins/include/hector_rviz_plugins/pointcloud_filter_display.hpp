@@ -19,7 +19,7 @@
 #define HECTOR_RVIZ_PLUGINS_POINTCLOUD_FILTER_DISPLAY_HPP
 
 #include <deque>
-#include <rviz_common/message_filter_display.hpp>
+#include <rviz_default_plugins/displays/pointcloud/point_cloud_transport_display.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 
 namespace rviz_common::properties
@@ -37,7 +37,7 @@ namespace hector_rviz_plugins
 {
 
 class PointCloudFilterDisplay
-    : public rviz_common::MessageFilterDisplay<sensor_msgs::msg::PointCloud2>
+    : public rviz_default_plugins::displays::PointCloud2TransportDisplay<sensor_msgs::msg::PointCloud2>
 {
   Q_OBJECT
 public:
