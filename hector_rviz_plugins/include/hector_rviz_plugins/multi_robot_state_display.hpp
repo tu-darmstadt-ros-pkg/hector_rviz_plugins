@@ -19,20 +19,21 @@
 #define HECTOR_RVIZ_PLUGINS_MULTI_ROBOT_STATE_DISPLAY_HPP
 
 #include <hector_rviz_plugins_msgs/msg/display_multi_robot_state.hpp>
-#include <rclcpp/subscription.hpp>
-#include <rviz_common/display.hpp>
+#include <moveit_msgs/msg/display_robot_state.hpp>
+#include <rviz_common/ros_topic_display.hpp>
 #include <unordered_map>
 
 namespace rviz_common::properties
 {
-class RosTopicProperty;
+class StringProperty;
 } // namespace rviz_common::properties
 
 namespace hector_rviz_plugins
 {
 class PrivateRobotStateDisplayHelper;
 
-class MultiRobotStateDisplay : public rviz_common::Display
+class MultiRobotStateDisplay
+    : public rviz_common::RosTopicDisplay<hector_rviz_plugins_msgs::msg::DisplayMultiRobotState>
 {
   Q_OBJECT
 public:
@@ -42,23 +43,29 @@ public:
 
   void update( float wall_dt, float ros_dt ) override;
 
-protected slots:
-  void onTopicChanged();
+  void reset() override;
 
+protected slots:
   void onSubdisplayEnableChanged();
 
-public:
-  void onEnableChanged() override;
+  // Re-subscribes every entry that does not specify its own robot_description to the new default.
+  void onDefaultRobotDescriptionChanged();
 
 protected:
-  void onNewMultiRobotState(
-      const hector_rviz_plugins_msgs::msg::DisplayMultiRobotState::ConstSharedPtr &msg );
+  void
+  processMessage( hector_rviz_plugins_msgs::msg::DisplayMultiRobotState::ConstSharedPtr msg ) override;
 
-  std::unordered_map<std::string, std::unique_ptr<PrivateRobotStateDisplayHelper>> displays_;
-  std::unordered_map<std::string, geometry_msgs::msg::PoseStamped> poses_;
+  struct RobotEntry {
+    std::unique_ptr<PrivateRobotStateDisplayHelper> display;
+    geometry_msgs::msg::PoseStamped pose;
+    moveit_msgs::msg::DisplayRobotState::ConstSharedPtr state;
+    // Raw robot_description from the message (empty = follows the display default).
+    std::string robot_description;
+  };
+
+  std::unordered_map<std::string, RobotEntry> robots_;
   hector_rviz_plugins_msgs::msg::DisplayMultiRobotState::ConstSharedPtr last_message_;
-  rclcpp::Subscription<hector_rviz_plugins_msgs::msg::DisplayMultiRobotState>::SharedPtr sub_;
-  rviz_common::properties::RosTopicProperty *topic_property_;
+  rviz_common::properties::StringProperty *default_robot_description_property_ = nullptr;
   bool needs_state_update_ = false;
 };
 } // namespace hector_rviz_plugins

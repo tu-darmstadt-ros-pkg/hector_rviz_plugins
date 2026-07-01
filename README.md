@@ -20,6 +20,11 @@ E.g. `/athena/robot_description` will create a `RobotModelDisplay` with `athena`
 ## MultiRobotState
 An RViz display to display multiple robot states with possibly differing positions and orientations.
 
+Each entry may set its own `robot_description` (a topic name) so visually different robots
+can be shown in one display; entries that leave it empty fall back to the display's *Robot
+Description* property. URDFs are loaded asynchronously, so RViz never freezes while waiting for a
+description, and a state is (re)applied automatically once its model becomes available.
+
 ![Two robot states with different poses](media/multi_robot_state_display.png)
 
 ## PointCloudFilter
