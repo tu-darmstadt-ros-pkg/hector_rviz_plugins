@@ -72,7 +72,6 @@ void MultiRobotModelDisplay::update( float wall_dt, float ros_dt )
     const auto robot_namespace =
         name.substr( 0, name.length() - std::strlen( "/robot_description" ) );
     auto robot_model_display = std::make_unique<rviz_default_plugins::displays::RobotModelDisplay>();
-    addChild( robot_model_display.get() );
     robot_model_display->initialize( context_ );
     robot_model_display->setName( QString::fromStdString( robot_namespace ) );
     robot_model_display->setTopic( QString::fromStdString( name ), "std_msgs/msg/String" );
@@ -85,6 +84,7 @@ void MultiRobotModelDisplay::update( float wall_dt, float ros_dt )
           "Failed to find TF Prefix property in RobotModelDisplay. Please file an issue!" );
     }
     robot_model_display->setEnabled( true );
+    addChild( robot_model_display.get() );
     robot_model_displays_.try_emplace( name, std::move( robot_model_display ) );
   }
 }
