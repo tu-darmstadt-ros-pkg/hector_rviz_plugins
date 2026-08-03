@@ -69,6 +69,8 @@ void MultiRobotModelDisplay::update( float wall_dt, float ros_dt )
       continue; // No publishers
     if ( robot_model_displays_.find( name ) != robot_model_displays_.end() )
       continue; // already added
+    if ( name.length() <= std::strlen( "/robot_description" ) )
+      continue;
     const auto robot_namespace =
         name.substr( 0, name.length() - std::strlen( "/robot_description" ) );
     auto robot_model_display = std::make_unique<rviz_default_plugins::displays::RobotModelDisplay>();
