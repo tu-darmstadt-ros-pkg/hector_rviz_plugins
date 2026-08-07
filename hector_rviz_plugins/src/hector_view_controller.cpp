@@ -354,6 +354,65 @@ void HectorViewController::moveEyeWithNewFocus( const Ogre::Vector3 &eye,
     context_->queueRender();
   }
 }
+void HectorViewController::relativeViewControllerCmd( float yaw_delta, float theta_delta,
+                                                      float zoom_factor,
+                                                      const Ogre::Vector3 &translation,
+                                                      bool stop_tracking, bool animate,
+                                                      bool switch_to_3d_mode )
+{
+  // Get current eye & focus points
+  const Ogre::Vector3 eye = eye_point_property_->getVector();
+  const Ogre::Vector3 focus = focus_point_property_->getVector();
+
+  // Vector from focus → eye
+  const auto dir = eye - focus;
+  const float radius = dir.length();
+  if ( radius < 1e-6f ) {
+    HECTOR_RVIZ_LOG_WARN_STREAM( "orbitEye: eye and focus are too close together" );
+    return;
+  }
+
+  // Compute current spherical angles
+  const float yaw = std::atan2( dir.y, dir.x );
+  const float theta = std::atan2( dir.z, std::sqrt( dir.x * dir.x + dir.y * dir.y ) );
+
+  // Apply deltas
+  const float yaw_new = yaw + yaw_delta;
+  float theta_new = theta + theta_delta;
+
+  // Clamp theta to avoid flipping
+  const float max_theta = Ogre::Math::HALF_PI - 0.01f;
+  theta_new = Ogre::Math::Clamp( theta_new, -max_theta, max_theta );
+
+  // Reconstruct new direction vector in Cartesian coords
+  const float cos_theta = std::cos( theta_new );
+  Ogre::Vector3 new_dir{
+      cos_theta * std::cos( yaw_new ), // x
+      cos_theta * std::sin( yaw_new ), // y
+      std::sin( theta_new )            // z
+  };
+  new_dir *= radius; // scale back to original distance
+  Ogre::Vector3 new_eye = focus + new_dir;
+
+  // APPLY ZOOM
+  new_eye = focus + zoom_factor * ( new_eye - focus );
+
+  // APPLY TRANSLATION OFFSETS
+  Ogre::Vector3 view_h = ( focus - new_eye );
+  view_h.z = 0.0f;
+  if ( view_h.squaredLength() < 1e-8f ) {
+    view_h = Ogre::Vector3::UNIT_X; // fallback
+  } else {
+    view_h.normalise();
+  }
+  Ogre::Vector3 side_h = Ogre::Vector3::UNIT_Z.crossProduct( view_h );
+  side_h.normalise();
+  Ogre::Vector3 world_pan =
+      view_h * translation.y + side_h * translation.x + Ogre::Vector3::UNIT_Z * translation.z;
+  new_eye += world_pan;
+  const auto new_focus = focus + world_pan;
+  moveEyeWithNewFocus( new_eye, new_focus, stop_tracking, animate, switch_to_3d_mode );
+}
 
 ViewMode HectorViewController::mode() const { return mode_; }
 

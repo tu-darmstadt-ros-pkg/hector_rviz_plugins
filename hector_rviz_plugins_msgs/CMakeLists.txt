@@ -13,6 +13,7 @@ rosidl_generate_interfaces(
   "msg/MultiRobotStateEntry.msg"
   "msg/DisplayMultiRobotState.msg"
   "msg/ViewMode.msg"
+  "msg/RelativeViewControllerCmd.msg"
   "srv/MoveEye.srv"
   "srv/MoveEyeAndFocus.srv"
   "srv/SetViewMode.srv"
