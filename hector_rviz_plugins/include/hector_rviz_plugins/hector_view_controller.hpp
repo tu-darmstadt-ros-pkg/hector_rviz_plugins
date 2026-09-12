@@ -156,6 +156,7 @@ protected:
   rviz_common::properties::VectorProperty *focus_point_property_ = nullptr;
   rviz_common::properties::VectorProperty *eye_point_property_ = nullptr;
   rviz_common::properties::VectorProperty *up_vector_property_ = nullptr;
+  rviz_common::properties::FloatProperty *focus_point_size_property_ = nullptr;
   /* 2D */
   rviz_common::properties::FloatProperty *angle_property_ = nullptr;
 

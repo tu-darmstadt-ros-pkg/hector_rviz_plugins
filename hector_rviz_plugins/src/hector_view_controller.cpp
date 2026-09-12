@@ -122,6 +122,10 @@ HectorViewController::HectorViewController()
   distance_property_ = new FloatProperty( "Distance", 5.0, "The distance from camera to focus point.",
                                           this, SLOT( onDistancePropertyChanged() ), this );
   distance_property_->setMin( 0.2f );
+  focus_point_size_property_ = new FloatProperty(
+      "Focus Point Size", 0.01f,
+      "Radius of the focus point sphere relative to the distance from camera to focus point.", this );
+  focus_point_size_property_->setMin( 0.0f );
   angle_property_ = new FloatProperty( "Angle", 0, "", this );
 
   animation_duration_property_ = new FloatProperty(
@@ -235,7 +239,6 @@ void HectorViewController::onInitialize()
   focal_shape_ = std::make_unique<rviz_rendering::Shape>(
       rviz_rendering::Shape::Sphere, context_->getSceneManager(), target_scene_node_ );
   focal_shape_->setColor( 1.0f, 1.0f, 0.0f, 0.5f );
-  focal_shape_->setScale( Ogre::Vector3( 0.05f, 0.05f, 0.05f ) );
   focal_shape_->getRootNode()->setVisible( false );
 
   onEnableTopicsChanged();
@@ -628,6 +631,8 @@ void HectorViewController::updateCamera( float dt )
 
   bool camera_position_changed = camera_animator_->updateCamera( eye, focus, dt * 1E-9f );
   focal_shape_->setPosition( focus_point_property_->getVector() );
+  const float focal_shape_size = focus_point_size_property_->getFloat() * distance;
+  focal_shape_->setScale( Ogre::Vector3( focal_shape_size, focal_shape_size, focal_shape_size ) );
 
   if ( camera_position_changed && !in_mode_transition_ ) {
     setEyePoint( eye );
