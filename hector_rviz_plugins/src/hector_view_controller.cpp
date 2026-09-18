@@ -252,9 +252,6 @@ void HectorViewController::reset()
   mode2d_property_->setBool( false );
   setFocusPoint( Ogre::Vector3::ZERO );
   setEyePoint( Ogre::Vector3( 4, 0, 3 ) );
-
-  setFocusPoint( Ogre::Vector3::ZERO );
-  setEyePoint( Ogre::Vector3( 4, 0, 3 ) );
   up_vector_property_->setVector( Ogre::Vector3::UNIT_Z );
   updateDistance();
 }
@@ -424,8 +421,13 @@ void HectorViewController::onFocusPointPropertyChanged() { updateDistance(); }
 
 void HectorViewController::onDistancePropertyChanged()
 {
-  setEyePoint( focus_point_property_->getVector() +
-               distance_property_->getFloat() * getCameraOrientation( camera_ ).zAxis() );
+  const Ogre::Vector3 focus = focus_point_property_->getVector();
+  // The camera orientation is only synced with the properties on render and points straight down in
+  // 2D mode, hence, the view direction has to be derived from the eye and focus properties.
+  Ogre::Vector3 direction = eye_point_property_->getVector() - focus;
+  if ( direction.isZeroLength() )
+    direction = getCameraOrientation( camera_ ).zAxis();
+  setEyePoint( focus + distance_property_->getFloat() * direction.normalisedCopy() );
 }
 
 void HectorViewController::onTrackedFrameChanged()
@@ -562,7 +564,7 @@ void HectorViewController::handleMouseEvent3D( rviz_common::ViewportMouseEvent &
     float fov_x = 2.f * atanf( tanf( fov_y / 2 ) * camera_->getAspectRatio() );
 
     int width = camera_->getViewport()->getActualWidth();
-    int height = camera_->getViewport()->getActualWidth();
+    int height = camera_->getViewport()->getActualHeight();
 
     Ogre::Vector3 eye = eye_point_property_->getVector();
     Ogre::Vector3 translation;
