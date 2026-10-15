@@ -19,6 +19,7 @@
 #include "./logging.hpp"
 
 #include <sensor_msgs/msg/point_cloud2.hpp>
+#include <tf2_ros/buffer_interface.hpp>
 
 #include <rviz_common/frame_manager_iface.hpp>
 #include <rviz_common/properties/bool_property.hpp>
