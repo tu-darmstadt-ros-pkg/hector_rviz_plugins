@@ -174,7 +174,8 @@ MultiRobotStateDisplay::MultiRobotStateDisplay()
 
 MultiRobotStateDisplay::~MultiRobotStateDisplay() = default;
 
-void MultiRobotStateDisplay::update( float wall_dt, float ros_dt )
+void MultiRobotStateDisplay::update( std::chrono::nanoseconds wall_dt,
+                                     std::chrono::nanoseconds ros_dt )
 {
   if ( last_message_ == nullptr )
     return;

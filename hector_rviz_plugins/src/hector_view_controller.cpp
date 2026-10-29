@@ -589,13 +589,13 @@ void HectorViewController::handleMouseEvent3D( rviz_common::ViewportMouseEvent &
   }
 }
 
-void HectorViewController::update( float dt, float )
+void HectorViewController::update( std::chrono::nanoseconds dt, std::chrono::nanoseconds )
 {
   updateMovement( dt );
   updateCamera( dt );
 }
 
-void HectorViewController::updateMovement( float dt )
+void HectorViewController::updateMovement( std::chrono::nanoseconds dt )
 {
 
   if ( key_x_direction_ == 0 && key_y_direction_ == 0 )
@@ -607,8 +607,9 @@ void HectorViewController::updateMovement( float dt )
   float x_ratio = x / length;
   float y_ratio = y / length;
 
-  x = x_ratio * max_movement_property_->getFloat() * ( dt * 1E-9f );
-  y = y_ratio * max_movement_property_->getFloat() * ( dt * 1E-9f );
+  const float dt_s = std::chrono::duration<float>( dt ).count();
+  x = x_ratio * max_movement_property_->getFloat() * dt_s;
+  y = y_ratio * max_movement_property_->getFloat() * dt_s;
 
   if ( quick_mode_ ) {
     x *= 2;
@@ -625,13 +626,13 @@ void HectorViewController::updateMovement( float dt )
   moveOnXYPlaneBy( -x * x_direction.x - y * y_direction.x, -x * x_direction.y - y * y_direction.y );
 }
 
-void HectorViewController::updateCamera( float dt )
+void HectorViewController::updateCamera( std::chrono::nanoseconds dt )
 {
   Ogre::Vector3 focus = focus_point_property_->getVector();
   Ogre::Vector3 eye = eye_point_property_->getVector();
   float distance = distance_property_->getFloat();
 
-  bool camera_position_changed = camera_animator_->updateCamera( eye, focus, dt * 1E-9f );
+  bool camera_position_changed = camera_animator_->updateCamera( eye, focus, dt );
   focal_shape_->setPosition( focus_point_property_->getVector() );
   const float focal_shape_size = focus_point_size_property_->getFloat() * distance;
   focal_shape_->setScale( Ogre::Vector3( focal_shape_size, focal_shape_size, focal_shape_size ) );

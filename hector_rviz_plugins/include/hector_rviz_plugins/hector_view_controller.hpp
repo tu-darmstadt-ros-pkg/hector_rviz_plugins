@@ -124,11 +124,11 @@ protected:
 
   virtual void handleMouseEvent2D( rviz_common::ViewportMouseEvent &evt );
 
-  void update( float dt, float ros_dt ) override;
+  void update( std::chrono::nanoseconds dt, std::chrono::nanoseconds ros_dt ) override;
 
-  void updateMovement( float dt );
+  void updateMovement( std::chrono::nanoseconds dt );
 
-  void updateCamera( float dt );
+  void updateCamera( std::chrono::nanoseconds dt );
 
   void setEyePoint( const Ogre::Vector3 &eye );
 

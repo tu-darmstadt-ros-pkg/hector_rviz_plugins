@@ -50,7 +50,7 @@ public:
   /**
    * This function is called periodically by rviz. It is used to update the display.
    */
-  void update( float wall_dt, float ros_dt ) override;
+  void update( std::chrono::nanoseconds wall_dt, std::chrono::nanoseconds ros_dt ) override;
 
   /**
    * Process the passed message and display the contained normals.

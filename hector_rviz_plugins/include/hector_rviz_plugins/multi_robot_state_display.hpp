@@ -41,7 +41,7 @@ public:
 
   ~MultiRobotStateDisplay() override;
 
-  void update( float wall_dt, float ros_dt ) override;
+  void update( std::chrono::nanoseconds wall_dt, std::chrono::nanoseconds ros_dt ) override;
 
   void reset() override;
 

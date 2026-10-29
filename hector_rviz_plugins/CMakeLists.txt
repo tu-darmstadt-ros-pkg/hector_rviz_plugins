@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.16)
 project(hector_rviz_plugins VERSION 1.0.0)
 set(CMAKE_CXX_STANDARD 17)
 
@@ -32,14 +32,13 @@ add_library(${PROJECT_NAME} SHARED ${HEADERS} ${SOURCES})
 target_include_directories(
   ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
                          $<INSTALL_INTERFACE:include>)
-ament_target_dependencies(
+target_link_libraries(
   ${PROJECT_NAME}
-  hector_rviz_plugins_msgs
-  moveit_ros_visualization
-  rviz2
-  rviz_default_plugins
-  rviz_ogre_vendor
-  std_msgs)
+  PUBLIC ${hector_rviz_plugins_msgs_TARGETS}
+         moveit_ros_visualization::moveit_robot_state_rviz_plugin_core
+         rviz_default_plugins::rviz_default_plugins
+         rviz_ogre_vendor::OgreMain
+         ${std_msgs_TARGETS})
 
 pluginlib_export_plugin_description_file(rviz_common plugin_description.xml)
 

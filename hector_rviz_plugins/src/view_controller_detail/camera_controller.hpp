@@ -158,7 +158,7 @@ public:
     return true;
   }
 
-  bool updateCamera( Ogre::Vector3 &eye, Ogre::Vector3 &focus, float dt )
+  bool updateCamera( Ogre::Vector3 &eye, Ogre::Vector3 &focus, std::chrono::nanoseconds dt )
   {
     if ( !in_animation_ && !is_frame_tracked_ )
       return false;
@@ -218,7 +218,7 @@ public:
     tracked_frame_remaining_position_difference_ =
         orientation_diff * tracked_frame_remaining_position_difference_;
     tracked_frame_remaining_position_difference_ += current_position - tracked_frame_last_position_;
-    float weight = std::min<float>( p_gain_ * dt, 1 );
+    float weight = std::min<float>( p_gain_ * std::chrono::duration<float>( dt ).count(), 1 );
     Ogre::Vector3 position_delta = tracked_frame_remaining_position_difference_ * weight;
     tracked_frame_remaining_position_difference_ -= position_delta;
 

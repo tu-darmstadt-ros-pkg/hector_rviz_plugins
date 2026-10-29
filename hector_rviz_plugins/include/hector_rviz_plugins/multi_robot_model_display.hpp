@@ -41,14 +41,14 @@ public:
   ~MultiRobotModelDisplay() override;
 
   void onInitialize() override;
-  void update( float wall_dt, float ros_dt ) override;
+  void update( std::chrono::nanoseconds wall_dt, std::chrono::nanoseconds ros_dt ) override;
 
 private:
   using RobotModelDisplayMap =
       std::map<std::string, std::unique_ptr<rviz_default_plugins::displays::RobotModelDisplay>,
                std::less<>>;
   RobotModelDisplayMap robot_model_displays_;
-  float scan_age_ns_ = 999 * 1E9f;
+  std::chrono::nanoseconds scan_age_ = std::chrono::seconds( 999 );
 
   rviz_common::properties::BoolProperty *enable_scan_property_;
   rviz_common::properties::FloatProperty *scan_interval_property_;

@@ -48,17 +48,18 @@ bool isRobotDescription( const std::string &name, const std::vector<std::string>
 }
 } // namespace
 
-void MultiRobotModelDisplay::update( float wall_dt, float ros_dt )
+void MultiRobotModelDisplay::update( std::chrono::nanoseconds wall_dt,
+                                     std::chrono::nanoseconds ros_dt )
 {
   for ( const auto &[_, display] : robot_model_displays_ ) { display->update( wall_dt, ros_dt ); }
 
   // Check if we need to scan for new robot_description topics
-  scan_age_ns_ += wall_dt;
+  scan_age_ += wall_dt;
   if ( !enable_scan_property_->getBool() )
     return;
-  if ( scan_age_ns_ < scan_interval_property_->getFloat() * 1E9 )
+  if ( scan_age_ < std::chrono::duration<float>( scan_interval_property_->getFloat() ) )
     return;
-  scan_age_ns_ = 0;
+  scan_age_ = {};
 
   auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
   auto topic_names_and_types = node->get_topic_names_and_types();

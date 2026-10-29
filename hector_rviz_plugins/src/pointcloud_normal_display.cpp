@@ -82,7 +82,8 @@ void PointCloudNormalDisplay::reset()
   visual_->setVisible( false );
 }
 
-void PointCloudNormalDisplay::update( float wall_dt, float ros_dt )
+void PointCloudNormalDisplay::update( std::chrono::nanoseconds wall_dt,
+                                      std::chrono::nanoseconds ros_dt )
 {
   PC2RDClass::update( wall_dt, ros_dt );
 }
